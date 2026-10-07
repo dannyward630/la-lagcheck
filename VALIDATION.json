@@ -1,0 +1,66 @@
+{
+  "software_version": "0.5.0",
+  "environment": {
+    "python": "3.12.7",
+    "numpy": "1.26.4",
+    "pandas": "2.2.2",
+    "scipy": "1.13.1",
+    "matplotlib": "3.9.2"
+  },
+  "source_code": {
+    "all_43_original_python_files_included": true,
+    "original_python_files_modified": 0,
+    "new_R01_example_python_files": 4
+  },
+  "unit_tests": {
+    "run": 174,
+    "passed": 173,
+    "skipped": 1,
+    "skip_reason": "Optional private R005 fixture unavailable"
+  },
+  "chromium_grating": {
+    "automatic_iterated_rate_ppm": 173.11258783602628,
+    "declared_iterated_rate_ppm": 173.05804299808756,
+    "declared_readback_residual_rate_ppm": 0.12545095339121373,
+    "both_numerical_verifiers": "matched"
+  },
+  "R01": {
+    "preset_fe56_status": "qc_failed",
+    "posthoc_status": "supported",
+    "posthoc_rate_ppm": 168.99125403067964,
+    "reference_rate_ppm": 168.99125403067967,
+    "absolute_rate_difference_ppm": 2.842170943040401e-14,
+    "finite_segment": [
+      0,
+      505015
+    ],
+    "excluded_signal_rows": 1,
+    "scope": "Post hoc Fe56 branch only; historical all-channel selection is not repeated. The final missing signal value is excluded from estimation but retained in the public input."
+  },
+  "R01_image_validation": {
+    "checks": {
+      "qc": true,
+      "ql": true,
+      "disp_um": true,
+      "el_h": true,
+      "row_h": true,
+      "yrow": true,
+      "local_constant_angle": true,
+      "local_mapped_angle": true
+    },
+    "all_pass": true,
+    "raster_shape": [
+      902,
+      1114
+    ],
+    "rate_ppm": 168.99125403067967,
+    "angles": [
+      24.993774508375427,
+      12.652875688748152
+    ],
+    "early_shift_mm": -0.7907883197673672,
+    "late_shift_mm": 0.7740541140814957
+  },
+  "privacy_scope": "Only anonymous R01 C13 and Fe56 values and events; no other biological raw data, original workspace, sample identity, private paths or AI prompts",
+  "interpretation": "Internal numerical reproduction and software checks, not independent spatial validation or journal acceptance."
+}

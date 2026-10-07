@@ -1,0 +1,35 @@
+{
+  "status": "supported",
+  "rate_ppm": 168.99125403067967,
+  "alignment": {
+    "ok": true,
+    "offset_s": 1.7820828369176522,
+    "peak": 0.4835876070439296,
+    "margin": 0.025281920428623872,
+    "boundary": false,
+    "reason": "coarse_alignment_check",
+    "source": "automatic_candidate"
+  },
+  "channel": "Fe56",
+  "n_lines": 904,
+  "closure": {
+    "residual_fit": {
+      "intercept_s": -3.150333337561039
+    },
+    "retained_blocks": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ]
+  },
+  "analysis_scope": "Post hoc Fe56 analysis with exclusion of blocks whose peaks lie at record-truncated search boundaries; this is not the preset diagnostic.",
+  "time_coordinate": "Relative seconds. Absolute acquisition date, clock and sample identity removed.",
+  "arithmetic_origin_s": 1073741824.0,
+  "arithmetic_origin_purpose": "A synthetic power-of-two origin preserves the original floating-point resolution during exact figure reproduction. It is not an acquisition timestamp."
+}

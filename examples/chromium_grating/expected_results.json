@@ -1,0 +1,196 @@
+{
+  "description": "Expected native-parser CLI outputs for the chromium-grating example. Rates are in microseconds per second; ppm is the report field name.",
+  "comparison_absolute_numeric_tolerance": 1e-06,
+  "input_files": {
+    "ms": "inputs/raw_ms/Cr test 2.csv",
+    "laser": "inputs/raw_laser/LaserLog_26-09-25_13-25-15.csv"
+  },
+  "six_check_report_fields": {
+    "coverage": [
+      "checks.coverage",
+      "checks.closure_coverage"
+    ],
+    "agreement": [
+      "checks.no_contradictory_high_quality_blocks",
+      "checks.closure_no_contradictory_high_quality_blocks"
+    ],
+    "search_boundary": [
+      "checks.peak_not_at_search_boundary",
+      "checks.closure_peak_not_at_boundary"
+    ],
+    "settings_robustness": [
+      "checks.all_sensitivity_configs_estimable",
+      "checks.all_sensitivity_evidence_supported",
+      "checks.sensitivity_envelope"
+    ],
+    "prediction": [
+      "checks.baseline_heldout",
+      "checks.closure_heldout"
+    ],
+    "iteration": [
+      "checks.closure_converged",
+      "checks.closure_residual"
+    ]
+  },
+  "runs": {
+    "automatic": {
+      "report_subset": {
+        "version": "0.5.0",
+        "tool": "la-lagcheck",
+        "status": "supported",
+        "rate_ppm": 173.11258783602628,
+        "n_intervals": 621,
+        "n_signal_points": 529100,
+        "alignment": {
+          "ok": true,
+          "offset_s": -0.9600959790133794,
+          "peak": 0.2579660609201393,
+          "margin": 0.017311388680852385,
+          "boundary": false,
+          "reason": "coarse_alignment_check",
+          "source": "automatic_candidate"
+        },
+        "checks": {
+          "coverage": true,
+          "no_contradictory_high_quality_blocks": true,
+          "peak_not_at_search_boundary": true,
+          "baseline_heldout": true,
+          "all_sensitivity_configs_estimable": true,
+          "all_sensitivity_evidence_supported": true,
+          "sensitivity_envelope": true,
+          "closure_converged": true,
+          "closure_coverage": true,
+          "closure_peak_not_at_boundary": true,
+          "closure_no_contradictory_high_quality_blocks": true,
+          "closure_heldout": true,
+          "closure_residual": true
+        },
+        "failed_checks": [],
+        "correction_exported": false,
+        "exported_log_diagnostic_rerun": false,
+        "importer_roundtrip_tested": false,
+        "receiver_interval_trajectory_agreement_verified": false,
+        "input_unchanged": true,
+        "baseline": {
+          "rate_ppm": 173.5766254726282,
+          "n_retained": 10
+        }
+      }
+    },
+    "declared": {
+      "report_subset": {
+        "version": "0.5.0",
+        "tool": "la-lagcheck",
+        "status": "supported",
+        "rate_ppm": 173.05804299808756,
+        "n_intervals": 621,
+        "n_signal_points": 529100,
+        "alignment": {
+          "ok": true,
+          "offset_s": -2.2828267242256075,
+          "source": "explicit_user_offset"
+        },
+        "checks": {
+          "coverage": true,
+          "no_contradictory_high_quality_blocks": true,
+          "peak_not_at_search_boundary": true,
+          "baseline_heldout": true,
+          "all_sensitivity_configs_estimable": true,
+          "all_sensitivity_evidence_supported": true,
+          "sensitivity_envelope": true,
+          "closure_converged": true,
+          "closure_coverage": true,
+          "closure_peak_not_at_boundary": true,
+          "closure_no_contradictory_high_quality_blocks": true,
+          "closure_heldout": true,
+          "closure_residual": true
+        },
+        "failed_checks": [],
+        "correction_exported": true,
+        "exported_log_diagnostic_rerun": true,
+        "importer_roundtrip_tested": false,
+        "receiver_interval_trajectory_agreement_verified": false,
+        "input_unchanged": true,
+        "baseline": {
+          "rate_ppm": 173.573817593063,
+          "n_retained": 10
+        },
+        "export_plan": {
+          "mode": "rate_only",
+          "offset_seconds": "0",
+          "initial_alignment_offset_s": -2.2828267242256075
+        },
+        "post_export_verification": {
+          "passed": true,
+          "checks": {
+            "full_diagnostic_supported": true,
+            "residual_rate_below_threshold": true,
+            "residual_drift_within_tolerance": true,
+            "coverage": true,
+            "heldout": true,
+            "written_bytes_unchanged": true
+          },
+          "failed_checks": [],
+          "alignment_offset_s": -2.2869177242256074,
+          "automatic_realignment_used": false,
+          "residual_baseline_rate_ppm": 0.12545095339121373,
+          "residual_rate_ppm": 0.12545095339121373,
+          "residual_rate_limit_ppm": 0.2,
+          "tolerance_s": 0.2,
+          "coverage_fraction": 0.9995407842979159,
+          "heldout_max_s": 0.008399999480878483,
+          "published_identical_bytes": true
+        },
+        "export_verification": {
+          "input_unchanged": true,
+          "alignment_offset_applied": false,
+          "selected_row_count": 3726,
+          "firing_interval_count": 621,
+          "row_count_verified": true,
+          "non_time_cells_verified": true,
+          "firing_intervals_verified": true
+        }
+      },
+      "post_export_report_subset": {
+        "status": "supported",
+        "rate_ppm": 0.12545095339121373,
+        "alignment": {
+          "ok": true,
+          "offset_s": -2.2869177242256074,
+          "source": "explicit_user_offset"
+        },
+        "checks": {
+          "coverage": true,
+          "no_contradictory_high_quality_blocks": true,
+          "peak_not_at_search_boundary": true,
+          "baseline_heldout": true,
+          "all_sensitivity_configs_estimable": true,
+          "all_sensitivity_evidence_supported": true,
+          "sensitivity_envelope": true,
+          "closure_converged": true,
+          "closure_coverage": true,
+          "closure_peak_not_at_boundary": true,
+          "closure_no_contradictory_high_quality_blocks": true,
+          "closure_heldout": true,
+          "closure_residual": true
+        },
+        "failed_checks": []
+      },
+      "manifest_subset": {
+        "version": "0.5.0",
+        "mode": "rate_only",
+        "input_sha256": {
+          "ms": "26967f4123dcb05a5e0a6f0250a24d62555416e9833b40aef0b35c8980e024b9",
+          "laser": "d4274b65a830d73f833659b4efb6eab3570a893ec01291bba8c3bdcf88291960"
+        },
+        "full_export_diagnostic_passed": true,
+        "receiver_interval_trajectory_agreement_verified": false,
+        "importer_roundtrip_tested": false
+      }
+    }
+  },
+  "input_sha256": {
+    "ms": "26967f4123dcb05a5e0a6f0250a24d62555416e9833b40aef0b35c8980e024b9",
+    "laser": "d4274b65a830d73f833659b4efb6eab3570a893ec01291bba8c3bdcf88291960"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "ms": {
+    "path": "REPLACE_WITH_QTEGRA_LDR.csv",
+    "format": "thermo_qtegra_ldr_csv",
+    "time_unit": "s",
+    "signal_columns": ["31P", "153Eu"]
+  },
+  "laser": {
+    "path": "REPLACE_WITH_LASER_LOG.csv",
+    "format": "laser_state_csv",
+    "sample_selector": "REPLACE_WITH_SAMPLE_NAME",
+    "time_kind": "datetime"
+  },
+  "analysis": {"tolerance_s": 0.2}
+}

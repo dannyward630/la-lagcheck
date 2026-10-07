@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "la-lagcheck"
+version = "0.5.0"
+description = "Per-acquisition laser/MS timing correction and verified iolite-compatible CSV export (research preview)"
+readme = "README.md"
+license = {file = "LICENSE"}
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.26,<3", "pandas>=2.2,<3", "scipy>=1.13,<2", "matplotlib>=3.8"]
+
+[project.optional-dependencies]
+preview = ["matplotlib>=3.8"]
+
+[project.scripts]
+la-lagcheck = "lagcheck.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["lagcheck*"]

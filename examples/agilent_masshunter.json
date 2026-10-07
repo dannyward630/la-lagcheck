@@ -1,0 +1,14 @@
+{
+  "ms": {
+    "path": "REPLACE_WITH_MASSHUNTER.csv",
+    "format": "agilent_masshunter_csv",
+    "signal_columns": ["C13", "Fe56"]
+  },
+  "laser": {
+    "path": "REPLACE_WITH_LASER_LOG.csv",
+    "format": "laser_state_csv",
+    "sample_selector": "REPLACE_WITH_SAMPLE_NAME",
+    "time_kind": "datetime"
+  },
+  "analysis": {"tolerance_s": 0.2}
+}

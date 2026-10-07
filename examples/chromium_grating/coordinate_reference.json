@@ -1,0 +1,34 @@
+{
+  "ms_time_first_raw": "0.0814",
+  "ms_first_sample_seconds": 0.0814,
+  "ms_native_first_sample_s": 0.0,
+  "laser_metadata_origin": "2026-09-25 13:25:21.142",
+  "laser_metadata_origin_seconds": "1790342721.142",
+  "laser_first_on_native_s": 23.637,
+  "n_intervals": 621,
+  "n_signal_points": 529100,
+  "floor_median_cps": 298520.91500000004,
+  "plateau_median_cps": 1585417.01,
+  "geometric_mean_threshold_cps": 687953.5859938258,
+  "crossing_left_sample_index": 355,
+  "crossing_left_native_s": 21.302100000000003,
+  "crossing_right_native_s": 21.3621,
+  "crossing_left_cps": 295165.7,
+  "crossing_right_cps": 747744.74,
+  "crossing_fraction": 0.8678879295731986,
+  "candidate_upcrossing_left_raw_s": [
+    21.3835,
+    43.6458
+  ],
+  "first_si_crossing_native_s": 21.354173275774393,
+  "first_si_crossing_raw_s": 21.43557327577439,
+  "alignment_offset_s": -2.2828267242256075,
+  "method": "First Si29 upward crossing of the geometric-mean threshold: median baseline raw MS t<10 s, median plateau 25<t<40 s, search t<45 s. Linear interpolation, first crossing retained; later recrossings are recorded. Native offset = rebased MS crossing minus metadata-rebased laser first On. No grid snapping or offset optimization.",
+  "laser_warnings": [
+    "1241 decreasing metadata timestamps retained in original row order; no repair applied"
+  ],
+  "ms_input_sha256": "26967f4123dcb05a5e0a6f0250a24d62555416e9833b40aef0b35c8980e024b9",
+  "laser_input_sha256": "d4274b65a830d73f833659b4efb6eab3570a893ec01291bba8c3bdcf88291960",
+  "ms_parser_file": "lagcheck/ms.py",
+  "laser_parser_file": "lagcheck/laser.py"
+}

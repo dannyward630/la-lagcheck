@@ -1,0 +1,23 @@
+{
+  "ms": {
+    "path": "inputs/raw_ms/Cr test 2.csv",
+    "format": "agilent_masshunter_csv",
+    "signal_columns": [
+      "Si29"
+    ]
+  },
+  "laser": {
+    "path": "inputs/raw_laser/LaserLog_26-09-25_13-25-15.csv",
+    "format": "laser_state_csv",
+    "sample_selector": "Cr test 2",
+    "time_kind": "datetime"
+  },
+  "analysis": {
+    "tolerance_s": 0.2,
+    "scan_speed_um_s": 375.0,
+    "alignment_offset_s": -2.2828267242256075
+  },
+  "export": {
+    "mode": "rate_only"
+  }
+}

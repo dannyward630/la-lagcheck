@@ -1,0 +1,16 @@
+{
+  "ms": {
+    "path": "REPLACE_WITH_SYNGISTIX.nc",
+    "format": "netcdf",
+    "time_variable": "REPLACE_FROM_INSPECTION",
+    "time_unit": "REPLACE_WITH_CONFIRMED_UNIT",
+    "signal_variables": ["REPLACE_FROM_INSPECTION"]
+  },
+  "laser": {
+    "path": "REPLACE_WITH_LASER_LOG.csv",
+    "format": "laser_state_csv",
+    "sample_selector": "REPLACE_WITH_SAMPLE_NAME",
+    "time_kind": "datetime"
+  },
+  "analysis": {"tolerance_s": 0.2}
+}

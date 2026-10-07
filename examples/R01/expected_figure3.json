@@ -1,0 +1,199 @@
+{
+  "rate_iter_ppm": 168.99125403067967,
+  "local_orientation": {
+    "status": "exploratory_candidate_only",
+    "source_reconstruction": "reconstruction.npz",
+    "rate_ppm": 168.99125403067967,
+    "roi_mm": [
+      13.6,
+      15.0,
+      4.7,
+      6.2
+    ],
+    "display_window_mm": [
+      13.35,
+      15.25,
+      4.4,
+      6.5
+    ],
+    "constant_translation_mm": 0.2938074865967102,
+    "anchor_line_zero_based": 349,
+    "method": "Largest 8-connected component in fixed ROI, equal-weight pixel-coordinate PCA; orientation relative to +y.",
+    "coordinate_grid": "Released Figure 3 display extent and pixel centers; source rasters not resampled.",
+    "comparisons": [
+      {
+        "threshold": 4.9,
+        "constant": {
+          "n_pixels": 1550,
+          "center": [
+            14.350791357564468,
+            5.3882712896073395
+          ],
+          "axis": [
+            0.4384055865898461,
+            0.8987772480691826
+          ],
+          "angle_deg": 26.002195468115517,
+          "eigenvalues": [
+            0.014787732944435139,
+            0.057876943324741414
+          ],
+          "threshold": 4.9
+        },
+        "mapped": {
+          "n_pixels": 1550,
+          "center": [
+            14.313696774193565,
+            5.388454956727002
+          ],
+          "axis": [
+            0.21885878028813552,
+            0.9757565445800452
+          ],
+          "angle_deg": 12.642012519812516,
+          "eigenvalues": [
+            0.01673748748498426,
+            0.051475122266486865
+          ],
+          "threshold": 4.9
+        },
+        "difference_deg": 13.360182948303
+      },
+      {
+        "threshold": 5.0,
+        "constant": {
+          "n_pixels": 1294,
+          "center": [
+            14.360063282578166,
+            5.388177431570604
+          ],
+          "axis": [
+            0.42251978407775875,
+            0.9063537014118076
+          ],
+          "angle_deg": 24.993774508375427,
+          "eigenvalues": [
+            0.01216880574787716,
+            0.05555147883887485
+          ],
+          "threshold": 5.0
+        },
+        "mapped": {
+          "n_pixels": 1283,
+          "center": [
+            14.32591777084958,
+            5.388857295989023
+          ],
+          "axis": [
+            0.21904377790620977,
+            0.9757150318410468
+          ],
+          "angle_deg": 12.652875688748152,
+          "eigenvalues": [
+            0.01328459427441098,
+            0.05010977097479633
+          ],
+          "threshold": 5.0
+        },
+        "difference_deg": 12.340898819627276
+      },
+      {
+        "threshold": 5.1,
+        "constant": {
+          "n_pixels": 859,
+          "center": [
+            14.36809444817995,
+            5.395208135975153
+          ],
+          "axis": [
+            0.4372784326335168,
+            0.8993261768421816
+          ],
+          "angle_deg": 25.930362941459517,
+          "eigenvalues": [
+            0.010888972676966795,
+            0.05287624817258542
+          ],
+          "threshold": 5.1
+        },
+        "mapped": {
+          "n_pixels": 858,
+          "center": [
+            14.330262237762229,
+            5.394711829190761
+          ],
+          "axis": [
+            0.24022297624865063,
+            0.9707177353289885
+          ],
+          "angle_deg": 13.899700970019948,
+          "eigenvalues": [
+            0.012442231779787444,
+            0.0472913277654628
+          ],
+          "threshold": 5.1
+        },
+        "difference_deg": 12.030661971439569
+      }
+    ],
+    "figure": "R01_local_orientation_candidate.png"
+  },
+  "early_window": {
+    "x": [
+      9.0,
+      15.0
+    ],
+    "y": [
+      1.2,
+      3.6
+    ],
+    "name": "Early",
+    "h": [
+      0.38655000208641677,
+      1.9341466563070455
+    ],
+    "shift_mm": -0.7907883197673672,
+    "blocks": [
+      1,
+      2
+    ],
+    "rms_const_mm": 0.7531322811895572,
+    "rms_corr_mm": 0.0042575860920662095
+  },
+  "late_window": {
+    "x": [
+      0.5,
+      6.5
+    ],
+    "y": [
+      9.6,
+      12.0
+    ],
+    "name": "Late",
+    "h": [
+      7.039050884198904,
+      8.68361501416073
+    ],
+    "shift_mm": 0.7740541140814957,
+    "blocks": [
+      7,
+      8
+    ],
+    "rms_const_mm": 0.7786274983421049,
+    "rms_corr_mm": 0.004369309745163568
+  },
+  "whole_duration_h": 9.184061944286029,
+  "panel_order": [
+    "a",
+    "b",
+    "c",
+    "d",
+    "e",
+    "f"
+  ],
+  "n_acquisitions": 29,
+  "mapping_zero_h": 4.528426944348547,
+  "first_mm": -1.0342845548551811,
+  "last_mm": 1.060669814180123,
+  "input_representation": "Anonymised saved-workspace signals and intervals; not a native vendor-export validation."
+}
