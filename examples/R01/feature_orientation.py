@@ -37,4 +37,4 @@ audit=dict(status='post_hoc_feature_comparison', rate_ppm=r.R_IT*1e6,
            roi_mm=roi, display_window_mm=[13.35,15.25,4.4,6.5],
            constant_translation_mm=shift, anchor_line_zero_based=anchor,
            comparisons=comparisons,
-           scope='A feature selected after reconstruction; neither global shear nor an independently measured anatomical direction.')
+           scope='A feature selected after reconstruction; neither global shear nor an independently measured direction in the sample.')

@@ -133,6 +133,7 @@ class ProvisionalSafeguardTests(unittest.TestCase):
 
     def case(self, step=0., export=None, **analysis):
         config = test_cli.WorkflowTests.make_case(None, self.root, step)
+        config['analysis'].setdefault('skip_record_edge_lines', False)
         config['analysis'].update(analysis)
         if export is not None:
             config['export'] = export

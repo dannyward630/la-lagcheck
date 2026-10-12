@@ -35,7 +35,7 @@
   "runs": {
     "automatic": {
       "report_subset": {
-        "version": "0.5.0",
+        "version": "0.7.0",
         "tool": "la-lagcheck",
         "status": "supported",
         "rate_ppm": 173.11258783602628,
@@ -63,7 +63,8 @@
           "closure_peak_not_at_boundary": true,
           "closure_no_contradictory_high_quality_blocks": true,
           "closure_heldout": true,
-          "closure_residual": true
+          "closure_residual": true,
+          "no_flagged_line_change_interval": true
         },
         "failed_checks": [],
         "correction_exported": false,
@@ -74,12 +75,24 @@
         "baseline": {
           "rate_ppm": 173.5766254726282,
           "n_retained": 10
+        },
+        "laser_log_screen": {
+          "evaluated": true,
+          "n_line_change_intervals": 620,
+          "flagged": [],
+          "limit_s": 1.0
+        },
+        "record_edge_lines": {
+          "enabled": true,
+          "applied": false,
+          "skipped_at_start": 0,
+          "skipped_at_end": 0
         }
       }
     },
     "declared": {
       "report_subset": {
-        "version": "0.5.0",
+        "version": "0.7.0",
         "tool": "la-lagcheck",
         "status": "supported",
         "rate_ppm": 173.05804299808756,
@@ -103,7 +116,8 @@
           "closure_peak_not_at_boundary": true,
           "closure_no_contradictory_high_quality_blocks": true,
           "closure_heldout": true,
-          "closure_residual": true
+          "closure_residual": true,
+          "no_flagged_line_change_interval": true
         },
         "failed_checks": [],
         "correction_exported": true,
@@ -149,6 +163,18 @@
           "row_count_verified": true,
           "non_time_cells_verified": true,
           "firing_intervals_verified": true
+        },
+        "laser_log_screen": {
+          "evaluated": true,
+          "n_line_change_intervals": 620,
+          "flagged": [],
+          "limit_s": 1.0
+        },
+        "record_edge_lines": {
+          "enabled": true,
+          "applied": false,
+          "skipped_at_start": 0,
+          "skipped_at_end": 0
         }
       },
       "post_export_report_subset": {
@@ -172,12 +198,13 @@
           "closure_peak_not_at_boundary": true,
           "closure_no_contradictory_high_quality_blocks": true,
           "closure_heldout": true,
-          "closure_residual": true
+          "closure_residual": true,
+          "no_flagged_line_change_interval": true
         },
         "failed_checks": []
       },
       "manifest_subset": {
-        "version": "0.5.0",
+        "version": "0.7.0",
         "mode": "rate_only",
         "input_sha256": {
           "ms": "26967f4123dcb05a5e0a6f0250a24d62555416e9833b40aef0b35c8980e024b9",

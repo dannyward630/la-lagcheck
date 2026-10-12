@@ -5,7 +5,7 @@ biological acquisition, R01. The R01 numerical data are restricted to C13 and
 Fe56 and anonymised firing records. Acquisition summaries remain available for
 all 29 routine acquisitions, together with software-configuration and boundary
 check tables. Other biological raw data, complete iolite workspaces, identities,
-clinical metadata and AI prompt records are excluded.
+sample metadata and AI prompt records are excluded.
 
 The grating signal file retains its numerical observations and acquisition
 metadata except for the local instrument-path header, which has been replaced

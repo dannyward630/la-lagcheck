@@ -119,13 +119,17 @@ def export_iolite(canonical_run, output):
                        'Before image use, verify that firing-interval endpoints and continuous-trajectory transition times '
                        'use the same corrected time coordinate after the offset. '
                        'Do not copy another acquisition offset or reapply the rate.')
-        if provisional:
+        if provisional and manifest.get('diagnostic_status') == 'supported_excluding_record_boundary_blocks' and not manifest.get('failed_checks'):
+            instruction = ('PROVISIONAL, NOT VERIFIED: the canonical run passed its timing checks only with the declared option '
+                           'exclude_record_boundary_blocks. ' + str(manifest.get('reason') or 'See report.')
+                           + ' Inspect the reconstruction and state the option with any result. ' + instruction)
+        elif provisional:
             instruction = ('PROVISIONAL, NOT VERIFIED: the timing checks of the canonical run did not all pass (stage: '
                            + str(manifest.get('failure_stage') or 'input_diagnostic') + '; '
                            + (', '.join(manifest.get('failed_checks') or []) or str(manifest.get('reason') or 'see report'))
                            + '). Inspect the reconstruction and state the failed checks with any result. ' + instruction)
-            if fallback.get('adopted'):
-                instruction += ' ' + fallback['note']
+        if provisional and fallback.get('adopted'):
+            instruction += ' ' + fallback['note']
         result = dict(tool='la-lagcheck', version=__version__, canonical_run=str(origin),
                       canonical_mode=plan['mode'], canonical_input_sha256=expected_inputs,
                       canonical_records_sha256={Path(p).name: h for p, h in snapshots.items()

@@ -1,9 +1,19 @@
 {
-  "rate_iter_ppm": 168.99125403067967,
+  "rate_iter_ppm": 169.05931388632462,
+  "starting_alignment_s": 1.7820828369176522,
+  "iterated_fit_intercept_s": -3.1484184578532934,
+  "constant_offset_s": 1.3935829525676697,
+  "colour_scale_log10": [
+    2.8129233787075685,
+    5.280625993557233
+  ],
+  "array_shape": [
+    902,
+    1114
+  ],
   "local_orientation": {
-    "status": "exploratory_candidate_only",
-    "source_reconstruction": "reconstruction.npz",
-    "rate_ppm": 168.99125403067967,
+    "status": "post_hoc_feature_comparison",
+    "rate_ppm": 169.05931388632462,
     "roi_mm": [
       13.6,
       15.0,
@@ -16,127 +26,125 @@
       4.4,
       6.5
     ],
-    "constant_translation_mm": 0.2938074865967102,
+    "constant_translation_mm": 0.2939258151767297,
     "anchor_line_zero_based": 349,
-    "method": "Largest 8-connected component in fixed ROI, equal-weight pixel-coordinate PCA; orientation relative to +y.",
-    "coordinate_grid": "Released Figure 3 display extent and pixel centers; source rasters not resampled.",
     "comparisons": [
       {
         "threshold": 4.9,
         "constant": {
-          "n_pixels": 1550,
+          "n_pixels": 1552,
           "center": [
-            14.350791357564468,
-            5.3882712896073395
+            14.34952504198085,
+            5.389427542888671
           ],
           "axis": [
-            0.4384055865898461,
-            0.8987772480691826
+            0.43715861860363303,
+            0.899384424025991
           ],
-          "angle_deg": 26.002195468115517,
+          "angle_deg": 25.922729875611875,
           "eigenvalues": [
-            0.014787732944435139,
-            0.057876943324741414
+            0.014827428104970088,
+            0.057912644115496785
           ],
           "threshold": 4.9
         },
         "mapped": {
           "n_pixels": 1550,
           "center": [
-            14.313696774193565,
-            5.388454956727002
+            14.313193548387112,
+            5.388590290394121
           ],
           "axis": [
-            0.21885878028813552,
-            0.9757565445800452
+            0.221100113694748,
+            0.9752511162383611
           ],
-          "angle_deg": 12.642012519812516,
+          "angle_deg": 12.773656173259461,
           "eigenvalues": [
-            0.01673748748498426,
-            0.051475122266486865
+            0.016829195200291504,
+            0.051224251479153805
           ],
           "threshold": 4.9
         },
-        "difference_deg": 13.360182948303
+        "difference_deg": 13.149073702352414
       },
       {
         "threshold": 5.0,
         "constant": {
-          "n_pixels": 1294,
+          "n_pixels": 1296,
           "center": [
-            14.360063282578166,
-            5.388177431570604
+            14.358543870732289,
+            5.388567958548929
           ],
           "axis": [
-            0.42251978407775875,
-            0.9063537014118076
+            0.4202475215529434,
+            0.907409510986417
           ],
-          "angle_deg": 24.993774508375427,
+          "angle_deg": 24.850215543658283,
           "eigenvalues": [
-            0.01216880574787716,
-            0.05555147883887485
+            0.012210798164788175,
+            0.055510578595167615
           ],
           "threshold": 5.0
         },
         "mapped": {
           "n_pixels": 1283,
           "center": [
-            14.32591777084958,
-            5.388857295989023
+            14.325403351519881,
+            5.388448552450371
           ],
           "axis": [
-            0.21904377790620977,
-            0.9757150318410468
+            0.21798385043534207,
+            0.975952376373654
           ],
-          "angle_deg": 12.652875688748152,
+          "angle_deg": 12.590642375382895,
           "eigenvalues": [
-            0.01328459427441098,
-            0.05010977097479633
+            0.013352396434871966,
+            0.04990700738655762
           ],
           "threshold": 5.0
         },
-        "difference_deg": 12.340898819627276
+        "difference_deg": 12.259573168275388
       },
       {
         "threshold": 5.1,
         "constant": {
-          "n_pixels": 859,
+          "n_pixels": 731,
           "center": [
-            14.36809444817995,
-            5.395208135975153
+            14.338450438979736,
+            5.343867181457219
           ],
           "axis": [
-            0.4372784326335168,
-            0.8993261768421816
+            0.42535408639425065,
+            0.9050270168275156
           ],
-          "angle_deg": 25.930362941459517,
+          "angle_deg": 25.173077982716574,
           "eigenvalues": [
-            0.010888972676966795,
-            0.05287624817258542
+            0.011169620430030145,
+            0.03859874618253439
           ],
           "threshold": 5.1
         },
         "mapped": {
-          "n_pixels": 858,
+          "n_pixels": 859,
           "center": [
-            14.330262237762229,
-            5.394711829190761
+            14.329321885913842,
+            5.3939696967545885
           ],
           "axis": [
-            0.24022297624865063,
-            0.9707177353289885
+            0.24163027794364705,
+            0.9703683881809402
           ],
-          "angle_deg": 13.899700970019948,
+          "angle_deg": 13.98278067732458,
           "eigenvalues": [
-            0.012442231779787444,
-            0.0472913277654628
+            0.012316420507719025,
+            0.04695864986400754
           ],
           "threshold": 5.1
         },
-        "difference_deg": 12.030661971439569
+        "difference_deg": 11.190297305391994
       }
     ],
-    "figure": "R01_local_orientation_candidate.png"
+    "scope": "A feature selected after reconstruction; neither global shear nor an independently measured direction in the sample."
   },
   "early_window": {
     "x": [
@@ -152,13 +160,13 @@
       0.38655000208641677,
       1.9341466563070455
     ],
-    "shift_mm": -0.7907883197673672,
+    "shift_mm": -0.7911068033433237,
     "blocks": [
       1,
       2
     ],
-    "rms_const_mm": 0.7531322811895572,
-    "rms_corr_mm": 0.0042575860920662095
+    "rms_const_mm": 0.7475836322490871,
+    "rms_corr_mm": 0.0038945079461236687
   },
   "late_window": {
     "x": [
@@ -174,13 +182,13 @@
       7.039050884198904,
       8.68361501416073
     ],
-    "shift_mm": 0.7740541140814957,
+    "shift_mm": 0.7743658580919655,
     "blocks": [
       7,
       8
     ],
-    "rms_const_mm": 0.7786274983421049,
-    "rms_corr_mm": 0.004369309745163568
+    "rms_const_mm": 0.7782019731005111,
+    "rms_corr_mm": 0.003292008673550589
   },
   "whole_duration_h": 9.184061944286029,
   "panel_order": [
@@ -192,8 +200,76 @@
     "f"
   ],
   "n_acquisitions": 29,
+  "displacement_source": "study_summaries/Supplementary_Data_S1.csv",
+  "figure_width_mm": 161.53469387755104,
+  "figure_height_mm": 232.8,
+  "minimum_font_pt": 7.126530612244898,
+  "feature_h_constant": [
+    2.9989752776755227,
+    3.771725138756964
+  ],
+  "feature_h_mapped": [
+    2.9989752776755227,
+    3.771725138756964
+  ],
+  "early_shift_spot_widths": 52.74045355622158,
+  "late_shift_spot_widths": 51.624390539464365,
+  "blocks": {
+    "block": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "elapsed_h": [
+      0.23314946737554337,
+      0.8438171062866847,
+      1.7681968284315532,
+      2.860508356226815,
+      3.981757245130009,
+      5.138008217347993,
+      6.317690995136897,
+      7.438938911822107,
+      8.365190717313025,
+      8.972401133974394
+    ],
+    "lag_minus_constant_offset_mm": [
+      -0.9793827997345709,
+      -0.8478912394397754,
+      -0.6315401970538043,
+      -0.3746499021353815,
+      -0.11608560136632393,
+      0.14103753462487195,
+      0.4127529976246612,
+      0.6624245580066372,
+      0.8788573984582302,
+      1.0285329819426872
+    ],
+    "retained_after_iteration": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "n_blocks_drawn_filled": 10,
+  "n_blocks_drawn_open": 0,
   "mapping_zero_h": 4.528426944348547,
-  "first_mm": -1.0342845548551811,
-  "last_mm": 1.060669814180123,
+  "first_mm": -1.0347011045630523,
+  "last_mm": 1.061096990336985,
+  "r01_summary_single_pass_rate_ppm": 171.758550802475,
+  "r01_summary_first_to_last_displacement_mm": 2.12954557954148,
   "input_representation": "Anonymised saved-workspace signals and intervals; not a native vendor-export validation."
 }

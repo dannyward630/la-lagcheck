@@ -27,6 +27,7 @@ class DefaultOutputTests(unittest.TestCase):
     def case(self,name='inputs',step=0.,**settings):
         root=self.root/name; root.mkdir()
         cfg=test_cli.WorkflowTests.make_case(None,root,step)
+        cfg['analysis'].setdefault('skip_record_edge_lines', False)
         cfg['analysis'].update(settings)
         (root/'config.json').write_text(json.dumps(cfg),encoding='utf-8')
         return root,cfg
@@ -98,7 +99,7 @@ class DefaultOutputTests(unittest.TestCase):
         self.assertEqual(meta['view'],'signal_time')
         self.assertTrue((self.root/'negative/INCOMPLETE.json').exists())
 
-    def test_empty_off_fragment_is_not_a_second_tissue_image(self):
+    def test_empty_off_fragment_is_not_a_second_sample_image(self):
         root=make_demo(self.root/'demo')
         path=root/'laser.csv'
         with path.open('a',encoding='utf-8',newline='') as f:

@@ -143,7 +143,10 @@ def test_fewer_than_four_blocks_does_not_manufacture_rate():
     r,_=diagnose(ms,laser,{'tolerance_s':.2,'alignment_offset_s':3.})
     assert r['rate_ppm'] is None
     assert r['short_acquisition']['executed_blocks']==0
-    assert all(v['state']=='not_executed' for v in r['short_acquisition']['check_execution'].values())
+    execution=r['short_acquisition']['check_execution']
+    # The laser-log screen needs no fit; every other check stays unexecuted.
+    assert all(v['state']=='not_executed' for k,v in execution.items() if k!='no_flagged_line_change_interval')
+    assert execution['no_flagged_line_change_interval']['source']=='laser_log_screen'
 
 
 def test_short_unidentified_peak_remains_failed_during_conditional_fit(monkeypatch):

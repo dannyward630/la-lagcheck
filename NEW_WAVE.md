@@ -11,7 +11,8 @@ An otolith configuration, saved next to the two original files, is:
   "ms": {
     "path": "Otolith.csv",
     "format": "agilent_masshunter_csv",
-    "signal_columns": ["Mg25", "P31", "Ca43", "Cu63", "Sr88", "Ba138", "Pb208", "Th232", "U238"]
+    "signal_columns": ["Mg25", "P31", "Ca43", "Cu63", "Sr88", "Ba138", "Pb208", "Th232", "U238"],
+    "signal_selection": "sum"
   },
   "laser": {
     "path": "Otolith_log.csv",
@@ -26,6 +27,8 @@ An otolith configuration, saved next to the two original files, is:
 ```text
 python -B -X utf8 -m lagcheck run otolith_69.json --output otolith_69_results --export --preview Ca43
 ```
+
+`"signal_selection": "sum"` fixes the matching signal to the sum of the listed columns. Without it, the default compares that sum with each listed column and uses the candidate with the highest starting-alignment peak.
 
 For all 72 intervals, including three NIST612 standards, replace `sample_selector` with `"sample_scope": "all"` and use a new output directory. For the 96-spot example, select `Gabbro_data.csv`, `Gabbro_log.csv`, and `sample_scope: "all"`; explicitly list the desired matching channels from that CSV header and use `--preview Si29`. The recorded validation used the sum of all 9 otolith channels and all 24 gabbro channels for diagnosis. Choosing Ca43 or Si29 for display does not change the matching signal.
 
@@ -42,6 +45,8 @@ If a short record has a nonboundary automatic correlation maximum above 0.25 but
 `report.json` retains `standard_diagnostic`, the conditional checks and their results, and `short_acquisition.check_execution`. Each check is `pass`, `fail`, `incomplete`, or `not_executed`. Each sensitivity variant reports whether it was executed. Missing configurations are never treated as passes. A finite conditional rate has status `short_acquisition_conditional`; insufficient usable blocks retain a no-rate result. Both return exit code 2. Configuration, parsing and byte-integrity errors still return 1.
 
 With `--export`, a finite conditional estimate can produce `provisional_laser_log.csv` and `provisional_manifest.json`. The timestamps are read back with the mapping held fixed, and the residual checks are saved. No short-path result is published as a verified corrected file while the full required sensitivity evidence is unavailable. Without a rate or explicit reference rate, no corrected log is manufactured. `--no-provisional` suppresses provisional log export and the existing input-placement retry; `--no-preview` suppresses plotting. `short_acquisition: false` disables the conditional short analysis, including its unverified peak inspection.
+
+The laser-log screen also runs on short records and on spot or bracketed sequences. It can flag the intervals at which standards interrupt a sample sequence and irregular moves between spots. Such intervals belong to the acquisition sequence, and the screen cannot tell them from timestamp steps. Its state in `check_execution` is taken from `laser_log_screen` when no fit exists.
 
 ## Views and limits
 

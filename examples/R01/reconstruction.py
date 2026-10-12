@@ -1,7 +1,8 @@
 """Exact Figure 3 reconstruction from anonymised R01 workspace values.
 
 Importing this module computes the two arrays without writing output files.
-The fixed mapping is the documented post hoc mapping, not a new diagnostic.
+The fixed mapping is the LA-LagCheck 0.7.0 default diagnosis stored in
+reference_mapping.json (reestimate_default.py repeats that diagnosis).
 """
 from pathlib import Path
 import json

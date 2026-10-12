@@ -6,7 +6,8 @@ CHECKS = ('coverage', 'no_contradictory_high_quality_blocks', 'peak_not_at_searc
           'baseline_heldout', 'all_sensitivity_configs_estimable',
           'all_sensitivity_evidence_supported', 'sensitivity_envelope',
           'closure_converged', 'closure_coverage', 'closure_peak_not_at_boundary',
-          'closure_no_contradictory_high_quality_blocks', 'closure_heldout', 'closure_residual')
+          'closure_no_contradictory_high_quality_blocks', 'closure_heldout', 'closure_residual',
+          'no_flagged_line_change_interval')
 
 
 def diagnose_short(ms, laser, settings, standard):
@@ -38,7 +39,12 @@ def diagnose_short(ms, laser, settings, standard):
     unavailable = [f'n_blocks={v}' for v in (8, 12, 15) if n < v * 12]
     execution = {}
     for key in CHECKS:
-        if key not in report.get('checks', {}):
+        screen = report.get('laser_log_screen') or {}
+        if key == 'no_flagged_line_change_interval' and key not in report.get('checks', {}) and screen.get('evaluated'):
+            # The screen needs only the log, so it has run even when no fit exists.
+            clean = not screen['flagged']
+            execution[key] = dict(state='pass' if clean else 'fail', result=clean, source='laser_log_screen')
+        elif key not in report.get('checks', {}):
             execution[key] = dict(state='not_executed', reason=report.get('reason', 'no_fit'))
         elif key.startswith('all_sensitivity_') and unavailable:
             execution[key] = dict(state='incomplete', reason='too_few_intervals_for_' + ','.join(unavailable),

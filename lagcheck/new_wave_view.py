@@ -18,7 +18,7 @@ def _write_csv(path, rows):
 
 
 def render_new_wave(out, config, report, laser, ms, mapping, channel, pyplot):
-    """Do not infer a tissue grid or connect different firing intervals."""
+    """Do not infer a sample grid or connect different firing intervals."""
     out = Path(out)
     intervals = laser.metadata['new_wave']['intervals']
     t, signal = np.asarray(ms.time), np.asarray(ms.signal)
@@ -72,7 +72,7 @@ def render_new_wave(out, config, report, laser, ms, mapping, channel, pyplot):
     all_stationary = all(c[-1] for cloud in clouds for c in cloud)
     labels = list(dict.fromkeys(i['sample'] for i in intervals))
     # Fixed spots are one position map. Moving acquisitions are separate panels
-    # per exact sample label, preventing a distant standard from shrinking tissue.
+    # per exact sample label, preventing a distant standard from shrinking the sample.
     groups = ['all explicitly selected spots'] if all_stationary else labels
     plt = pyplot()
     fig, axes = plt.subplots(len(groups), len(panels), squeeze=False,

@@ -166,14 +166,14 @@ class SignalImportTests(unittest.TestCase):
         self.write("C:\\Example\\Batch.b\\001SMPL.d\nIntensity Vs Time,CPS\n"
                    "Acquired : example\nTime [Sec],C13,Fe56,temperature\n"
                    "0.0932,1,5,999\n0.1622,2,6,998\n0.2312,3,7,997\n"
-                   "\n\n          Printed:06-Jul-26 14:11:48\n")
+                   "\n\n          Printed:01-Jan-26 00:00:00\n")
         data = load_signal(self.path, {"format": "agilent_masshunter_csv",
                                        "signal_columns": ["C13", "Fe56"]})
         np.testing.assert_allclose(data.time, [0, .069, .138])
         np.testing.assert_array_equal(data.signal, [6, 8, 10])
         self.assertEqual(data.metadata["header_row"], 3)
         self.assertEqual(data.metadata["trailing_blank_records"], 2)
-        self.assertEqual(data.metadata["recognized_footer"], ["Printed:06-Jul-26 14:11:48"])
+        self.assertEqual(data.metadata["recognized_footer"], ["Printed:01-Jan-26 00:00:00"])
         with self.assertRaisesRegex(InputError, "isotope"):
             load_signal(self.path, {"format": "agilent_masshunter_csv",
                                     "signal_columns": ["temperature"]})

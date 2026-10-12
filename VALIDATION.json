@@ -1,5 +1,5 @@
 {
-  "software_version": "0.5.0",
+  "software_version": "0.7.0",
   "environment": {
     "python": "3.12.7",
     "numpy": "1.26.4",
@@ -8,59 +8,270 @@
     "matplotlib": "3.9.2"
   },
   "source_code": {
-    "all_43_original_python_files_included": true,
-    "original_python_files_modified": 0,
-    "new_R01_example_python_files": 4
+    "python_files": 50,
+    "modified_in_comments_or_docstrings_only": [
+      "lagcheck/signal_selection.py",
+      "examples/R01/reconstruction.py"
+    ],
+    "scope": "Byte comparison with the 0.6.0 release; the correlation core is unchanged. Fields named since_0.5.0 are not repeated; the 0.6.0 comparison supersedes them.",
+    "new_python_files_since_0.6.0": [
+      "examples/R01/reestimate_default.py",
+      "tests/test_record_edge_lines.py"
+    ],
+    "python_files_modified_since_0.6.0": [
+      "lagcheck/__init__.py",
+      "lagcheck/cli.py",
+      "lagcheck/estimator.py",
+      "lagcheck/signal_selection.py",
+      "tests/test_alignment_fallback.py",
+      "tests/test_default_output.py",
+      "tests/test_estimator.py",
+      "tests/test_export_verification.py",
+      "tests/test_log_screen_and_options.py",
+      "tests/test_provisional.py",
+      "examples/R01/reconstruction.py",
+      "examples/R01/reproduce_figure3.py"
+    ],
+    "removed_python_files_since_0.6.0": [
+      "examples/R01/reestimate_posthoc.py"
+    ]
   },
   "unit_tests": {
-    "run": 174,
-    "passed": 173,
+    "run": 224,
+    "passed": 223,
     "skipped": 1,
-    "skip_reason": "Optional private R005 fixture unavailable"
+    "skip_reason": "Optional private reference fixture unavailable",
+    "runner": "python -m unittest discover -s tests"
+  },
+  "pytest": {
+    "passed": 240,
+    "skipped": 1,
+    "subtests_passed": 118,
+    "note": "pytest also collects the function-style tests of tests/test_new_wave_short.py, which unittest discovery does not"
   },
   "chromium_grating": {
-    "automatic_iterated_rate_ppm": 173.11258783602628,
+    "automatic_iterated_rate_ppm": 173.11258783602625,
     "declared_iterated_rate_ppm": 173.05804299808756,
     "declared_readback_residual_rate_ppm": 0.12545095339121373,
-    "both_numerical_verifiers": "matched"
+    "both_numerical_verifiers": "matched",
+    "flagged_line_change_intervals": 0,
+    "largest_unflagged_line_change_deviation_s": 0.3994999999999891,
+    "rates_equal_to_0.5.0": true,
+    "rates_equal_to_0.6.0_within_1e-9": true,
+    "record_edge_lines_applied": false
   },
   "R01": {
-    "preset_fe56_status": "qc_failed",
-    "posthoc_status": "supported",
-    "posthoc_rate_ppm": 168.99125403067964,
-    "reference_rate_ppm": 168.99125403067967,
-    "absolute_rate_difference_ppm": 2.842170943040401e-14,
+    "status": "supported",
+    "failed_checks": [],
+    "selected_signal": [
+      "Fe56"
+    ],
+    "candidate_alignment_peaks": {
+      "C13+Fe56": 0.4275816538969,
+      "C13": 0.44094109460425124,
+      "Fe56": 0.4835876070439296
+    },
+    "single_pass_rate_ppm": 169.7961267682242,
+    "iterated_rate_ppm": 169.05931388632462,
+    "reference_rate_ppm": 169.05931388632462,
+    "absolute_rate_difference_ppm": 0.0,
+    "starting_alignment_s": 1.7820828369176522,
+    "scan_lines_left_out_at_start": 3,
+    "scan_lines_left_out_at_end": 0,
+    "retained_blocks_after_iteration": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "record_boundary_blocks": [],
+    "declared_placement_status": "supported",
+    "declared_placement_iterated_rate_ppm": 169.05999859650836,
+    "flagged_line_change_intervals": 0,
     "finite_segment": [
       0,
       505015
     ],
     "excluded_signal_rows": 1,
-    "scope": "Post hoc Fe56 branch only; historical all-channel selection is not repeated. The final missing signal value is excluded from estimation but retained in the public input."
+    "scope": "Default settings on the distributed C13 and Fe56 signals. The final missing signal value is excluded from estimation but retained in the public input. Internal timing checks; not independent spatial validation.",
+    "script": "examples/R01/reestimate_default.py"
   },
   "R01_image_validation": {
-    "checks": {
-      "qc": true,
-      "ql": true,
-      "disp_um": true,
-      "el_h": true,
-      "row_h": true,
-      "yrow": true,
-      "local_constant_angle": true,
-      "local_mapped_angle": true
+    "rate_iter_ppm": 169.05931388632462,
+    "first_mm": -1.0347011045630523,
+    "last_mm": 1.061096990336985,
+    "local_orientation": {
+      "status": "post_hoc_feature_comparison",
+      "rate_ppm": 169.05931388632462,
+      "roi_mm": [
+        13.6,
+        15.0,
+        4.7,
+        6.2
+      ],
+      "display_window_mm": [
+        13.35,
+        15.25,
+        4.4,
+        6.5
+      ],
+      "constant_translation_mm": 0.2939258151767297,
+      "anchor_line_zero_based": 349,
+      "comparisons": [
+        {
+          "threshold": 4.9,
+          "constant": {
+            "n_pixels": 1552,
+            "center": [
+              14.34952504198085,
+              5.389427542888671
+            ],
+            "axis": [
+              0.43715861860363303,
+              0.899384424025991
+            ],
+            "angle_deg": 25.922729875611875,
+            "eigenvalues": [
+              0.014827428104970088,
+              0.057912644115496785
+            ],
+            "threshold": 4.9
+          },
+          "mapped": {
+            "n_pixels": 1550,
+            "center": [
+              14.313193548387112,
+              5.388590290394121
+            ],
+            "axis": [
+              0.221100113694748,
+              0.9752511162383611
+            ],
+            "angle_deg": 12.773656173259461,
+            "eigenvalues": [
+              0.016829195200291504,
+              0.051224251479153805
+            ],
+            "threshold": 4.9
+          },
+          "difference_deg": 13.149073702352414
+        },
+        {
+          "threshold": 5.0,
+          "constant": {
+            "n_pixels": 1296,
+            "center": [
+              14.358543870732289,
+              5.388567958548929
+            ],
+            "axis": [
+              0.4202475215529434,
+              0.907409510986417
+            ],
+            "angle_deg": 24.850215543658283,
+            "eigenvalues": [
+              0.012210798164788175,
+              0.055510578595167615
+            ],
+            "threshold": 5.0
+          },
+          "mapped": {
+            "n_pixels": 1283,
+            "center": [
+              14.325403351519881,
+              5.388448552450371
+            ],
+            "axis": [
+              0.21798385043534207,
+              0.975952376373654
+            ],
+            "angle_deg": 12.590642375382895,
+            "eigenvalues": [
+              0.013352396434871966,
+              0.04990700738655762
+            ],
+            "threshold": 5.0
+          },
+          "difference_deg": 12.259573168275388
+        },
+        {
+          "threshold": 5.1,
+          "constant": {
+            "n_pixels": 731,
+            "center": [
+              14.338450438979736,
+              5.343867181457219
+            ],
+            "axis": [
+              0.42535408639425065,
+              0.9050270168275156
+            ],
+            "angle_deg": 25.173077982716574,
+            "eigenvalues": [
+              0.011169620430030145,
+              0.03859874618253439
+            ],
+            "threshold": 5.1
+          },
+          "mapped": {
+            "n_pixels": 859,
+            "center": [
+              14.329321885913842,
+              5.3939696967545885
+            ],
+            "axis": [
+              0.24163027794364705,
+              0.9703683881809402
+            ],
+            "angle_deg": 13.98278067732458,
+            "eigenvalues": [
+              0.012316420507719025,
+              0.04695864986400754
+            ],
+            "threshold": 5.1
+          },
+          "difference_deg": 11.190297305391994
+        }
+      ],
+      "scope": "A feature selected after reconstruction; neither global shear nor an independently measured direction in the sample."
     },
-    "all_pass": true,
-    "raster_shape": [
-      902,
-      1114
+    "note": "Values written by reproduce_figure3.py in this validation run; its audit matches expected_figure3.json (171 values, relative tolerance 1e-9)"
+  },
+  "study_repeat": {
+    "default_settings_runs_compared_with_0.5.0": 56,
+    "runs_differing_in_rate_retained_blocks_or_earlier_checks": 0,
+    "acquisitions_whose_status_changed_through_the_laser_log_screen": [
+      "R05"
     ],
-    "rate_ppm": 168.99125403067967,
-    "angles": [
-      24.993774508375427,
-      12.652875688748152
-    ],
-    "early_shift_mm": -0.7907883197673672,
-    "late_shift_mm": 0.7740541140814957
+    "scope": "R01 to R28 from saved workspaces under automatic and declared starting alignment; inputs are not distributed"
   },
   "privacy_scope": "Only anonymous R01 C13 and Fe56 values and events; no other biological raw data, original workspace, sample identity, private paths or AI prompts",
-  "interpretation": "Internal numerical reproduction and software checks, not independent spatial validation or journal acceptance."
+  "interpretation": "Internal numerical reproduction and software checks, not independent spatial validation or journal acceptance.",
+  "defaults_0.7.0": {
+    "skip_record_edge_lines": true,
+    "ms_signal_selection_csv": "highest_alignment_peak",
+    "scope": "Both defaults were chosen after the outcomes of R01 to R28 had been examined; the counts below are retrospective, not a prospective success rate",
+    "r01_to_r28_supported_automatic_alignment_archived_inputs": {
+      "v070_defaults": 18,
+      "v060_defaults": 0
+    },
+    "r01_to_r28_supported_saved_alignment_declared_archived_inputs": {
+      "v070_defaults": 19
+    },
+    "tolerance_s": 0.2,
+    "both_defaults_off_runs_equal_to_v060_defaults": {
+      "runs": 81,
+      "composition": "56 runs for R01 to R28 under two starting alignments, 6 for the corrected inputs of R05, R07 and R14, 3 settings for R29 and 16 settings for the clock-comparison scans",
+      "differences": 0
+    },
+    "r05_original_file_export_rates": "identical to 0.6.0",
+    "iolite_examples": "identical to 0.6.0",
+    "r01_example": "examples/R01 uses the default analysis; the Figure 3 audit and the re-estimation match the stored mapping"
+  }
 }

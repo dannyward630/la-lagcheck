@@ -21,7 +21,7 @@ of institutional ownership or a claim of blanket clearance to publish the paper'
 experimental data.
 
 The synthetic generators in `examples/` do not read biological acquisitions.
-The optional R005 raw fixture and complete iolite workspaces are absent. A separate,
+The optional private reference fixture and complete iolite workspaces are absent. A separate,
 authorised R01 example contains only anonymous C13 and Fe56 signal values and firing
 records, as described in `examples/R01/README.md`. No test or example uploads data,
 sends an external message or publishes files.

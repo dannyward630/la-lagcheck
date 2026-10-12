@@ -1,4 +1,4 @@
-"""Behavioral checks, including the two exact R005 canonical outputs."""
+"""Behavioral checks, including the two exact outputs of an optional private reference fixture."""
 import csv
 from decimal import Decimal
 import hashlib
@@ -200,18 +200,20 @@ class AdapterTests(unittest.TestCase):
         with self.assertRaisesRegex(adapter.CompatibilityError, "INCOMPLETE"):
             adapter.adapt(source, manifest, self.root / "out")
 
-    def test_both_real_r005_outputs_keep_561_endpoint_pairs_and_all_cells(self):
-        if not os.environ.get('LAGCHECK_R005_CANONICAL_QA'):
-            self.skipTest('Private R005 fixture: set LAGCHECK_R005_CANONICAL_QA to the archived canonical _qa directory')
+    def test_both_private_reference_outputs_keep_all_endpoint_pairs_and_cells(self):
+        if not os.environ.get('LAGCHECK_PRIVATE_CANONICAL_QA'):
+            self.skipTest('Private reference fixture: set LAGCHECK_PRIVATE_CANONICAL_QA to the archived canonical _qa directory')
         for mode in ("real_rate_only", "real_affine"):
             with self.subTest(mode=mode):
-                origin = Path(os.environ['LAGCHECK_R005_CANONICAL_QA']) / mode
+                origin = Path(os.environ['LAGCHECK_PRIVATE_CANONICAL_QA']) / mode
                 source = origin / "corrected_laser_log.csv"
                 before = source.read_bytes()
                 result = adapter.adapt(source, origin / "correction_manifest.json", self.root / mode)
                 self.assertEqual(result["firing_interval_count"], 561)
                 self.assertEqual(result["output_row_count"], 3368)
-                self.assertEqual(result["selected_sample"], "S10618 3 Down")
+                # The expected label is read from the private fixture; none is stored in this package.
+                expected_sample = json.loads((origin / "config.json").read_text(encoding="utf-8"))["laser"]["sample_selector"]
+                self.assertEqual(result["selected_sample"], expected_sample)
                 self.assertEqual(result["metadata_records_with_changed_inherited_speed"], [2])
                 self.assertEqual(Decimal(result["max_timestamp_quantization_error_s"]), Decimal("0.000500"))
                 self.assertTrue(result["firing_endpoint_source_pairs_equal"])

@@ -1,6 +1,7 @@
 {
   "status": "supported",
-  "rate_ppm": 168.99125403067967,
+  "rate_ppm": 169.05931388632462,
+  "single_pass_rate_ppm": 169.7961267682242,
   "alignment": {
     "ok": true,
     "offset_s": 1.7820828369176522,
@@ -11,12 +12,55 @@
     "source": "automatic_candidate"
   },
   "channel": "Fe56",
+  "signal_selection": {
+    "mode": "highest_alignment_peak",
+    "configured_columns": [
+      "C13",
+      "Fe56"
+    ],
+    "selected_columns": [
+      "Fe56"
+    ],
+    "candidates": [
+      {
+        "columns": [
+          "C13",
+          "Fe56"
+        ],
+        "peak": 0.4275816538969
+      },
+      {
+        "columns": [
+          "C13"
+        ],
+        "peak": 0.44094109460425124
+      },
+      {
+        "columns": [
+          "Fe56"
+        ],
+        "peak": 0.4835876070439296
+      }
+    ]
+  },
   "n_lines": 904,
+  "record_edge_lines": {
+    "enabled": true,
+    "applied": true,
+    "sides": [
+      "start"
+    ],
+    "skipped_at_start": 3,
+    "skipped_at_end": 0,
+    "guard_s": 30.0
+  },
   "closure": {
+    "converged": true,
     "residual_fit": {
-      "intercept_s": -3.150333337561039
+      "intercept_s": -3.1484184578532934
     },
     "retained_blocks": [
+      0,
       1,
       2,
       3,
@@ -28,7 +72,14 @@
       9
     ]
   },
-  "analysis_scope": "Post hoc Fe56 analysis with exclusion of blocks whose peaks lie at record-truncated search boundaries; this is not the preset diagnostic.",
+  "settings": {
+    "tolerance_s": 0.2,
+    "skip_record_edge_lines": true,
+    "exclude_record_boundary_blocks": false,
+    "starting_alignment": "automatic"
+  },
+  "program": "LA-LagCheck 0.7.0",
+  "analysis_scope": "Default LA-LagCheck 0.7.0 diagnosis with automatic starting alignment and a 0.2 s tolerance. Fe56 was selected among the C13+Fe56 sum, C13 and Fe56 by the highest starting-alignment peak. The first three scan lines, which start within 30 s of the start of the signal record, were left out of every fit; the mapping is applied to all 904 lines.",
   "time_coordinate": "Relative seconds. Absolute acquisition date, clock and sample identity removed.",
   "arithmetic_origin_s": 1073741824.0,
   "arithmetic_origin_purpose": "A synthetic power-of-two origin preserves the original floating-point resolution during exact figure reproduction. It is not an acquisition timestamp."

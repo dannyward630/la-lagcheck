@@ -14,4 +14,4 @@ Before using an exported log for reconstruction:
 
 The flags `importer_roundtrip_tested`, `gui_workflow_tested` and `receiver_interval_trajectory_agreement_verified` remain false unless the corresponding receiving-application checks were actually performed. Internal export checks must not be described as an application round trip.
 
-The shipped chromium-grating example reproduces timing and corrected-log readback. It contains no collaborator workspaces. Evidence from a different imported file or prior manuscript reconstruction does not validate newly exported bytes automatically.
+The shipped chromium-grating example reproduces timing and corrected-log readback. It contains no saved workspaces. Evidence from a different imported file or prior manuscript reconstruction does not validate newly exported bytes automatically.

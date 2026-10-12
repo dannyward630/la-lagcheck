@@ -27,6 +27,7 @@ class AlignmentFallbackTests(unittest.TestCase):
 
     def case(self, declared=False):
         cfg = test_cli.WorkflowTests.make_case(None, self.root)
+        cfg['analysis']['skip_record_edge_lines'] = False  # these cases keep the block layout they were written for
         if not declared:
             del cfg['analysis']['alignment_offset_s']
         (self.root/'config.json').write_text(json.dumps(cfg), encoding='utf-8')

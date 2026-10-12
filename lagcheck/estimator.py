@@ -34,6 +34,76 @@ def _rescale(lines, rate, offset=0.0):
                         for k in ('Start Time', 'End Time')}) for row in lines]
 
 
+LINE_CHANGE_NEIGHBOURS = 5
+LINE_CHANGE_SCALE_MULTIPLE = 10.0
+LINE_CHANGE_DEFAULT_LIMIT_S = 1.0
+BOUNDARY_DEFINITION = ('Search range cut short by the start or end of the signal record and peak within '
+                       'two sampling intervals of that shortened boundary')
+BOUNDARY_LIMITATION = ('The lag of a record-boundary block is measured near the boundary of its observable search range. '
+                       'Agreement with the fitted line can show a lag inside the record, not a lag beyond the record boundary.')
+SUPPORTED_STATUSES = ('supported', 'supported_excluding_record_boundary_blocks')
+
+
+def screen_line_changes(lines, limit_s=1.0, neighbours=LINE_CHANGE_NEIGHBOURS,
+                        scale_multiple=LINE_CHANGE_SCALE_MULTIPLE):
+    """Compare each line-change interval of the laser log with its neighbours.
+
+    A line-change interval is the logged start of firing on one interval minus
+    the logged end of firing on the preceding one. An interval is flagged when
+    it differs from the median of up to ``neighbours`` intervals on each side
+    by more than ``limit_s`` and by more than ``scale_multiple`` times their
+    scaled median absolute deviation. The second condition reduces flagging
+    caused by ordinary variation in irregular sequences, such as spot
+    acquisitions. A flagged interval may reflect a pause, a timestamp step or
+    variation in the acquisition sequence; the log alone does not establish
+    the cause. The block lags do not test an interval that lies inside an
+    unusable block, so a flagged interval withholds supported status.
+    """
+    if isinstance(neighbours, bool) or not isinstance(neighbours, int) or neighbours < 1:
+        raise InputError('neighbours must be a positive integer')
+    for name, value in (('limit_s', limit_s), ('scale_multiple', scale_multiple)):
+        if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value <= 0:
+            raise InputError(name + ' must be a positive finite number')
+    start = np.array([float(row['Start Time']) for row in lines])
+    end = np.array([float(row['End Time']) for row in lines])
+    if not (np.isfinite(start).all() and np.isfinite(end).all()):
+        raise InputError('Laser firing times must be finite')
+    gaps = start[1:] - end[:-1]
+    result = dict(method='neighbour_median', neighbours_each_side=int(neighbours), limit_s=float(limit_s),
+                  default_limit_s=LINE_CHANGE_DEFAULT_LIMIT_S, scale_multiple=float(scale_multiple),
+                  n_line_change_intervals=int(len(gaps)), evaluated=bool(len(gaps) >= 3), flagged=[],
+                  n_flagged_at_default_limit=None,
+                  median_interval_s=None, largest_unflagged_abs_deviation_s=None,
+                  interpretation='A flag marks a line-change interval that is unusually long or short relative to its neighbours. '
+                                 'It may reflect an acquisition pause, a timestamp step or variation in the acquisition sequence; '
+                                 'the log alone does not establish the cause. Inspect the signal on either side and the acquisition '
+                                 'design. Steps smaller than the limit are not detected by this screen.',
+                  limitations='Intervals that recur by design, such as bracketing standards, are flagged. Groups of similarly '
+                              'displaced adjacent intervals can escape detection because they shift the local reference. '
+                              'Random scatter of several tenths of a second can produce a flag. '
+                              'Intervals near the ends of a sequence have fewer neighbours.')
+    if not result['evaluated']:
+        return result
+    medians = np.empty(len(gaps))
+    scales = np.empty(len(gaps))
+    for i in range(len(gaps)):
+        near = np.r_[gaps[max(0, i-neighbours):i], gaps[i+1:i+1+neighbours]]
+        medians[i] = np.median(near)
+        scales[i] = 1.4826*np.median(np.abs(near-medians[i]))
+    deviations = gaps - medians
+    flagged = np.abs(deviations) > np.maximum(limit_s, scale_multiple*scales)
+    # Recorded so that a raised limit stays visible in reports and manifests.
+    result['n_flagged_at_default_limit'] = int((np.abs(deviations) > np.maximum(LINE_CHANGE_DEFAULT_LIMIT_S, scale_multiple*scales)).sum())
+    result['flagged'] = [dict(after_interval=int(i+1), interval_s=float(gaps[i]),
+                              neighbour_median_s=float(medians[i]), deviation_s=float(deviations[i]),
+                              neighbour_scaled_mad_s=float(scales[i]), next_start_time_s=float(start[i+1]))
+                         for i in np.flatnonzero(flagged)]
+    result['median_interval_s'] = float(np.median(gaps))
+    rest = np.abs(deviations[~flagged])
+    result['largest_unflagged_abs_deviation_s'] = float(rest.max()) if len(rest) else None
+    return result
+
+
 def _fit(df, peak_min, margin_min, reject_tol=3.0, mode='worst'):
     if df is None or not len(df):
         return None
@@ -77,6 +147,51 @@ def _fit(df, peak_min, margin_min, reject_tol=3.0, mode='worst'):
                 max_residual_s=float(max(abs(residual))))
 
 
+# Largest lag-search half-width among the stability alternatives (max_shift = 30 s).
+EDGE_GUARD_MIN_S = 30.0
+
+
+def record_edge_lines(t, lines, guard, n_blocks, sides=('start', 'end')):
+    """Count the lines at the named ends of the log that lie within ``guard`` seconds of the ends of the signal record.
+
+    A block is matched to the signal by shifting its firing pattern, and the
+    shift cannot run past the ends of the record. When the signal of the first
+    line begins as the record begins, the first block cannot be shifted
+    earlier, and its correlation peak is found at the edge of what can be
+    searched. The diagnosis is then repeated without the lines that start
+    within ``guard`` of the first recorded sample (or end within ``guard`` of
+    the last), so that the first (or last) block has the signal of the
+    neighbouring lines, and of the laser-off intervals between them, on both
+    sides. ``guard`` is the largest search half-width used in the checks. The
+    lines are chosen once, from the log at its starting alignment, and the
+    same lines are left out in every fit of the repeated diagnosis. They are
+    left out only when at least twelve lines per block remain.
+    """
+    guard = float(guard)
+    lo, hi = float(t[0])+guard, float(t[-1])-guard
+    head = 0
+    while 'start' in sides and head < len(lines) and lines[head]['Start Time'] < lo:
+        head += 1
+    tail = 0
+    while 'end' in sides and tail < len(lines)-head and lines[len(lines)-1-tail]['End Time'] > hi:
+        tail += 1
+    if (head or tail) and len(lines)-head-tail < 12*n_blocks:
+        return dict(start=0, end=0, available_start=head, available_end=tail, applied=False, guard_s=guard)
+    return dict(start=head, end=tail, available_start=head, available_end=tail, applied=bool(head or tail), guard_s=guard)
+
+
+def _record_boundary_sides(df, closed_df, variants):
+    """Ends of the record at which a block peak lies at a record-limited search boundary, in any fit."""
+    sides = set()
+    for frame in (df, closed_df):
+        if frame is not None and 'record_boundary_block' in frame:
+            sides.update(side for side in frame[frame.record_boundary_block].record_boundary_side if side)
+    for variant in variants:
+        sides.update(b['record_boundary_side'] for b in variant['blocks']
+                     if b.get('record_boundary_block') and b.get('record_boundary_side'))
+    return sides
+
+
 def _measure(t, y, lines, settings, overrides=None):
     kw = {k: settings[k] for k in ('n_blocks', 'max_shift', 'peak_min', 'margin_min', 'reject_tol')}
     kw.update(overrides or {})
@@ -106,6 +221,25 @@ def _measure(t, y, lines, settings, overrides=None):
         df['near_search_boundary']=(df.lag_s-df.search_min_s<=2*dt)|(df.search_max_s-df.lag_s<=2*dt)
         for key in ('observed_start_s','observed_end_s','observed_n_lines','fit_eligible'):
             df[key]=[row[key] for row in observed]
+        # A record-boundary block has its search range cut short by the start
+        # or end of the signal record and its peak within two sampling
+        # intervals of that shortened boundary. When the record starts as the
+        # signal of the first firing arrives, removing the fitted rate can
+        # leave the first-block peak there; the search-edge criterion is then
+        # not met.
+        at_start=(df.search_min_s>-(pad-.5)*dt)&(df.lag_s-df.search_min_s<=2*dt)
+        at_end=(df.search_max_s<(pad-.5)*dt)&(df.search_max_s-df.lag_s<=2*dt)
+        boundary=np.isfinite(df.lag_s)&(at_start|at_end)
+        df['record_boundary_block']=boundary
+        df['record_boundary_side']=np.where(boundary&at_start,'start',np.where(boundary,'end',''))
+        # Declared option: a fully observed record-boundary block leaves the
+        # fit and the coverage, but its lag must still agree with the fitted
+        # line (see _evidence). Blocks clipped by the record keep their rule.
+        # Only a block that would otherwise enter the fit is excluded by the option.
+        gate=(df.peak>kw['peak_min'])&(df.margin>kw['margin_min'])
+        excluded=boundary&gate&df.fit_eligible.astype(bool)&bool(settings.get('exclude_record_boundary_blocks'))
+        df['record_boundary_excluded']=excluded
+        df.loc[excluded,'fit_eligible']=False
     return _fit(df, kw['peak_min'], kw['margin_min'], kw['reject_tol']), df
 
 
@@ -124,7 +258,9 @@ def _evidence(fit, df, lines, settings, require_coverage=True):
     qualified=df[(df.peak>settings['peak_min']) & (df.margin>settings['margin_min'])]
     contradictory=[]
     for row in qualified.to_dict(orient='records'):
-        if row['fit_eligible']:
+        if row['fit_eligible'] or row.get('record_boundary_excluded'):
+            # An excluded record-boundary block is fully observed; it is held
+            # to the same agreement tolerance at its midpoint.
             predicted=fit['intercept_s']+fit['rate_ppm']*1e-6*(row['t_mid']-fit['intercept_time_s'])
             discrepancy=abs(row['lag_s']-predicted)
         elif row['observed_end_s']>row['observed_start_s']:
@@ -143,6 +279,45 @@ def _evidence(fit, df, lines, settings, require_coverage=True):
                 contradictory_high_quality_blocks=contradictory,
                 evidence_pass=bool((not require_coverage or coverage>=settings['min_coverage']) and not boundary and not contradictory
                                    and fit['heldout_max_s']<=settings['tolerance_s']))
+
+
+def _boundary_rows(frame, model):
+    if frame is None or 'record_boundary_block' not in frame:
+        return []
+    retained = None if model is None else frame[frame.block.isin(model['retained'])]
+    median_peak = None if retained is None or not len(retained) else float(retained.peak.median())
+    rows = []
+    for row in frame[frame.record_boundary_block].to_dict(orient='records'):
+        start = row['record_boundary_side'] == 'start'
+        distance = row['lag_s']-row['search_min_s'] if start else row['search_max_s']-row['lag_s']
+        predicted = None if model is None else model['intercept_s']+model['rate_ppm']*1e-6*(row['t_mid']-model['intercept_time_s'])
+        rows.append(dict(block=int(row['block']), side=row['record_boundary_side'], lag_s=row['lag_s'], peak=row['peak'],
+                         median_peak_of_retained_blocks=median_peak, distance_to_record_boundary_s=distance,
+                         lag_minus_fitted_line_s=None if predicted is None else row['lag_s']-predicted,
+                         excluded_from_fit_by_option=bool(row['record_boundary_excluded'])))
+    return rows
+
+
+def _boundary_report(settings, df, fit, closed_df, closed, variants):
+    """List record-boundary blocks of the reported fits and of the stability alternatives, under either policy."""
+    report = dict(policy='exclude' if settings['exclude_record_boundary_blocks'] else 'check',
+                  baseline=_boundary_rows(df, fit), closure=_boundary_rows(closed_df, closed),
+                  definition=BOUNDARY_DEFINITION, limitation=BOUNDARY_LIMITATION)
+    report['excluded_blocks'] = sorted({r['block'] for r in report['baseline']+report['closure']
+                                        if r['excluded_from_fit_by_option']})
+    listed, excluded = {}, {}
+    for variant in variants:
+        if variant['config'] in ('all', 'trim', 'closure'):
+            continue        # these reuse the blocks already listed under baseline or closure
+        here = [int(b['block']) for b in variant['blocks'] if b.get('record_boundary_block')]
+        gone = [int(b['block']) for b in variant['blocks'] if b.get('record_boundary_excluded')]
+        if here:
+            listed[variant['config']] = here
+        if gone:
+            excluded[variant['config']] = gone
+    report['in_sensitivity'] = listed
+    report['excluded_in_sensitivity'] = excluded
+    return report
 
 
 def _coarse(t, y, lines, window):
@@ -167,17 +342,27 @@ def _coarse(t, y, lines, window):
                 boundary=bool(k in (0,len(values)-1)), reason='coarse_alignment_check')
 
 
-def _diagnose_standard(ms, laser, settings):
+def _diagnose_standard(ms, laser, settings, _edge=None):
     settings = dict(settings)
+    original = dict(settings)
     allowed = {'tolerance_s', 'n_blocks', 'max_shift', 'peak_min', 'margin_min',
                'reject_tol', 'coarse_window_s', 'alignment_offset_s',
                'max_step_relative_deviation', 'min_coverage', 'closure_tolerance_ppm',
-               'closure_iterations', 'scan_speed_um_s'}
+               'closure_iterations', 'scan_speed_um_s', 'line_change_limit_s',
+               'exclude_record_boundary_blocks', 'skip_record_edge_lines'}
     if set(settings)-allowed:
         raise InputError('Unknown analysis setting(s): '+', '.join(sorted(set(settings)-allowed)))
+    # The only non-numeric setting; it is validated here and restored below.
+    exclude_boundary = settings.pop('exclude_record_boundary_blocks', False)
+    if not isinstance(exclude_boundary, bool):
+        raise InputError('exclude_record_boundary_blocks must be true or false')
+    skip_edge = settings.pop('skip_record_edge_lines', True)
+    if not isinstance(skip_edge, bool):
+        raise InputError('skip_record_edge_lines must be true or false')
     defaults = dict(n_blocks=10, max_shift=25.0, peak_min=.25, margin_min=.01,
                     reject_tol=3.0, coarse_window_s=300., max_step_relative_deviation=.1,
-                    min_coverage=.8, closure_tolerance_ppm=.2, closure_iterations=6)
+                    min_coverage=.8, closure_tolerance_ppm=.2, closure_iterations=6,
+                    line_change_limit_s=LINE_CHANGE_DEFAULT_LIMIT_S)
     settings = dict(defaults, **settings)
     if 'tolerance_s' not in settings or not math.isfinite(float(settings['tolerance_s'])) or float(settings['tolerance_s']) <= 0:
         raise InputError('An explicit positive tolerance_s is required for the intended use')
@@ -192,9 +377,11 @@ def _diagnose_standard(ms, laser, settings):
         raise InputError('n_blocks must be between 4 and 100')
     if settings['closure_iterations'] > 30:
         raise InputError('closure_iterations must not exceed 30')
-    for key in ('max_shift','reject_tol','coarse_window_s','closure_tolerance_ppm'):
+    for key in ('max_shift','reject_tol','coarse_window_s','closure_tolerance_ppm','line_change_limit_s'):
         if settings[key] <= 0:
             raise InputError(key+' must be positive')
+    settings['exclude_record_boundary_blocks'] = exclude_boundary
+    settings['skip_record_edge_lines'] = skip_edge
     if not 0 < settings['min_coverage'] <= 1 or not 0 < settings['peak_min'] < 1 or not 0 < settings['margin_min'] < 1 or not 0 < settings['max_step_relative_deviation'] < 1:
         raise InputError('Invalid coverage, correlation gate or time-grid setting')
     if 'scan_speed_um_s' in settings and settings['scan_speed_um_s'] <= 0:
@@ -220,6 +407,10 @@ def _diagnose_standard(ms, laser, settings):
                   index_grid_max_deviation_s=grid_error,
                   index_lag_error_bound_s=2*grid_error,
                   interpretation='Internal timing checks; not independent geometric accuracy or a clock attribution')
+    # The laser-log screen needs only the logged times, so it is reported
+    # whichever prerequisite or check stops the diagnosis below.
+    screen = screen_line_changes(lines, settings['line_change_limit_s'])
+    report['laser_log_screen'] = screen
     if grid_dev > settings['max_step_relative_deviation']:
         report['reason']='time_grid_not_supported_by_index_shift_estimator'
         return _native(report), []
@@ -239,6 +430,16 @@ def _diagnose_standard(ms, laser, settings):
         report['reason']='initial_alignment_not_identifiable'
         return _native(report), []
     aligned = _rescale(lines,0,alignment['offset_s'])
+    # First pass: every line. A second pass (below) leaves out the lines at an end of the record
+    # only when a block peak was found at a search boundary imposed by that end.
+    edge = _edge or dict(start=0, end=0, applied=False, guard_s=None, sides=[])
+    report['record_edge_lines'] = dict(enabled=skip_edge, applied=bool(edge['applied']), sides=list(edge.get('sides', [])),
+                                       skipped_at_start=edge['start'], skipped_at_end=edge['end'], guard_s=edge['guard_s'],
+                                       rule='When a block peak lies at a search boundary imposed by the start or end of the signal record, '
+                                            'the diagnosis is repeated without the lines within the guard of that end of the record. '
+                                            'The same lines are left out in every fit. Coverage is still measured against all lines.')
+    whole = aligned
+    aligned = whole[edge['start']:len(whole)-edge['end']]
     fit, df = _measure(t,y,aligned,settings)
     blocks = [] if df is None else df.to_dict(orient='records')
     retained = [] if fit is None else fit['retained']
@@ -248,15 +449,17 @@ def _diagnose_standard(ms, laser, settings):
         if not b['margin'] > settings['margin_min']: reasons.append('competing_peak')
         b['gate_pass']=not reasons
         b['retained']=b['block'] in retained
-        if not b['fit_eligible']: reasons.append('outside_signal_support')
+        if b.get('record_boundary_excluded'): reasons.append('record_boundary_excluded_by_option')
+        elif not b['fit_eligible']: reasons.append('outside_signal_support')
         if b['gate_pass'] and b['fit_eligible'] and not b['retained'] and fit is not None: reasons.append('fit_outlier')
         b['reasons']=reasons
     report['computed_blocks']=len(blocks)
     report['gate_passing_blocks']=sum(b['gate_pass'] for b in blocks)
     if fit is None:
         report['reason']='fewer_than_four_usable_blocks'
+        report['record_boundary_blocks']=_boundary_report(settings,df,None,None,None,[])
         return _native(report), _native(blocks)
-    baseline_evidence=_evidence(fit,df,aligned,settings)
+    baseline_evidence=_evidence(fit,df,whole,settings)
     contradictory=baseline_evidence['contradictory_high_quality_blocks']
     for b in blocks:
         predicted=fit['intercept_s']+fit['rate_ppm']*1e-6*(b['t_mid']-fit['intercept_time_s'])
@@ -272,7 +475,8 @@ def _diagnose_standard(ms, laser, settings):
     history=[]
     closed=None
     for iteration in range(settings['closure_iterations']):
-        closed_lines = _rescale(aligned,trial)
+        closed_whole = _rescale(whole,trial)
+        closed_lines = closed_whole[edge['start']:len(closed_whole)-edge['end']]
         closed, closed_df = _measure(t,y,closed_lines,settings)
         residual=None if closed is None else closed['rate_ppm']
         history.append(dict(trial_ppm=trial,residual_ppm=residual))
@@ -280,7 +484,7 @@ def _diagnose_standard(ms, laser, settings):
             break
         trial += residual
     converged=closed is not None and abs(closed['rate_ppm'])<settings['closure_tolerance_ppm']
-    closure_evidence=_evidence(closed,closed_df,closed_lines,settings)
+    closure_evidence=_evidence(closed,closed_df,closed_whole,settings)
     closure_coverage=closure_evidence['coverage_fraction']
     closure_boundary=closure_evidence['peak_at_search_boundary']
     closure_contradictory=closure_evidence['contradictory_high_quality_blocks']
@@ -298,7 +502,7 @@ def _diagnose_standard(ms, laser, settings):
         for value in values:
             variant_settings=dict(settings,**{key:value})
             result,variant_df = _measure(t,y,aligned,settings,{key:value})
-            evidence=_evidence(result,variant_df,aligned,variant_settings)
+            evidence=_evidence(result,variant_df,whole,variant_settings)
             variants.append(dict(config=f'{key}={value}',rate_ppm=None if result is None else result['rate_ppm'],
                                  **evidence,blocks=[] if variant_df is None else variant_df.to_dict(orient='records')))
     for mode in ('all','trim'):
@@ -306,7 +510,7 @@ def _diagnose_standard(ms, laser, settings):
         # Trimming intentionally removes the first and last qualified blocks.
         # Baseline/closure must cover the full record; this perturbation tests
         # the rate on an explicitly reduced domain, still retaining contradictions.
-        evidence=_evidence(result,df,aligned,settings,require_coverage=mode!='trim')
+        evidence=_evidence(result,df,whole,settings,require_coverage=mode!='trim')
         variants.append(dict(config=mode,rate_ppm=None if result is None else result['rate_ppm'],
                              **evidence,blocks=df.to_dict(orient='records')))
     variants.append(dict(config='closure',rate_ppm=trial if converged else None,
@@ -327,14 +531,41 @@ def _diagnose_standard(ms, laser, settings):
                   closure_peak_not_at_boundary=not closure_boundary,
                   closure_no_contradictory_high_quality_blocks=not closure_contradictory,
                   closure_heldout=closed is not None and closed['heldout_max_s']<=tol,
-                  closure_residual=closed is not None and abs(closed['rate_ppm'])*1e-6*duration<=tol)
+                  closure_residual=closed is not None and abs(closed['rate_ppm'])*1e-6*duration<=tol,
+                  no_flagged_line_change_interval=not screen['flagged'])
+
+    boundary_report=_boundary_report(settings,df,fit,closed_df,closed,variants)
+    excluded_blocks=boundary_report['excluded_blocks']
+    # The option can also act only in an alternative setting of the stability
+    # check (for example a finer block division); that still qualifies the result.
+    option_acted=bool(excluded_blocks or boundary_report['excluded_in_sensitivity'])
+    passed=all(checks.values())
+    status='qc_failed' if not passed else ('supported_excluding_record_boundary_blocks' if option_acted else 'supported')
     report.update(checks=checks,sensitivity=variants,sensitivity_envelope_s=envelope,
                   rate_ppm=trial if converged else fit['rate_ppm'],
-                  status='supported' if all(checks.values()) else 'qc_failed',
+                  status=status,record_boundary_blocks=boundary_report,
                   failed_checks=[k for k,v in checks.items() if not v])
+    if status=='supported_excluding_record_boundary_blocks':
+        acted=[]
+        if excluded_blocks:
+            acted.append('block(s) '+', '.join(str(b) for b in excluded_blocks)+' left out of the reported fit')
+        if boundary_report['excluded_in_sensitivity']:
+            acted.append('a block left out in the stability alternatives '+', '.join(sorted(boundary_report['excluded_in_sensitivity'])))
+        report['reason']=('All checks passed with the declared option exclude_record_boundary_blocks: '+'; '.join(acted)+'. '
+                          'The search-edge criterion was not applied to an excluded block, and a lag beyond the record boundary cannot be seen.')
     report['predicted_end_to_end_lag_change_s']=report['rate_ppm']*1e-6*duration
     if 'scan_speed_um_s' in settings:
         report['predicted_end_to_end_displacement_um']=report['predicted_end_to_end_lag_change_s']*settings['scan_speed_um_s']
+    if skip_edge and _edge is None:
+        sides = _record_boundary_sides(df, closed_df, variants)
+        if sides:
+            candidate = record_edge_lines(t, whole, max(settings['max_shift'], EDGE_GUARD_MIN_S), settings['n_blocks'], tuple(sides))
+            if candidate['applied']:
+                candidate['sides'] = sorted(sides)
+                return _diagnose_standard(ms, laser, original, _edge=candidate)
+            report['record_edge_lines'].update(sides=sorted(sides), available_at_start=candidate['available_start'],
+                                               available_at_end=candidate['available_end'],
+                                               not_applied_reason='No line lies within the guard of that end, or fewer than twelve lines per block would remain')
     return _native(report), _native(blocks)
 
 

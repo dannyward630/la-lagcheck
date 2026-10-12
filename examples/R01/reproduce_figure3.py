@@ -1,6 +1,8 @@
-"""Reproduce the published Figure 3 comparison from public numerical inputs.
+"""Reproduce the Figure 3 comparison from public numerical inputs.
 
-Run from any working directory. The output directory must be new.
+The mapping is the LA-LagCheck default diagnosis of R01 stored in
+reference_mapping.json. Run from any working directory. The output directory
+must be new. The numerical audit is compared with expected_figure3.json.
 """
 from pathlib import Path
 import argparse
@@ -15,7 +17,8 @@ from matplotlib.patches import Rectangle
 from matplotlib.lines import Line2D
 import matplotlib.patheffects as pe
 import reconstruction as r
-from feature_orientation import audit as local
+import feature_orientation as fo
+local = fo.audit
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--output', type=Path, required=True)
 args = parser.parse_args()
@@ -33,10 +36,12 @@ M = pd.read_csv(data)
 assert len(M)==29 and set(M.acquisition)=={f'R{i:02d}' for i in range(1,30)}
 assert np.allclose(M.first_to_last_displacement_mm,np.abs(M.rate_ppm)*1e-6*M.duration_h*3600*M.speed_um_s/1000)
 plt.rcParams.update({'font.family':'Arial','font.size':8,'axes.titlesize':8,'axes.labelsize':7.7,
-                     'xtick.labelsize':7.5,'ytick.labelsize':7.5,'pdf.fonttype':42,'svg.fonttype':'none'})
+                     'xtick.labelsize':7.5,'ytick.labelsize':7.5,'pdf.fonttype':42,'svg.fonttype':'none',
+                     'axes.spines.top':False,'axes.spines.right':False,'axes.linewidth':.6})
 cm=plt.get_cmap('viridis').copy();cm.set_bad('#cccccc')
 blue='#0072B2';gray='.35'
-fig=plt.figure(figsize=(170/25.4,245/25.4))
+SCALE=232.8/245  # Printed size 161.5 mm by 232.8 mm; all text is scaled by the same factor.
+fig=plt.figure(figsize=(170*SCALE/25.4,245*SCALE/25.4))
 gs=fig.add_gridspec(6,2,height_ratios=[1.05,.54,.54,.88,.065,.65],left=.075,right=.985,top=.955,bottom=.055,hspace=.65,wspace=.22)
 whole_hours=float((ns['le'][-1]-ns['T0'])/3600)
 for j,img in enumerate((qc,ql)):
@@ -83,7 +88,7 @@ for j,img in enumerate((qc,ql)):
     ax.set_title('(D) Local feature: 3.0 to 3.8 h\nConstant offset' if j==0 else '3.0 to 3.8 h\nAfter time mapping',loc='left')
     ax.text(.04,.96,f"{p['angle_deg']:.1f}°",transform=ax.transAxes,color='white',fontsize=9,va='top',
             bbox=dict(fc='black',alpha=.6,ec='none',pad=1.5))
-    if j==0: ax.text(.5,.025,'Translated +0.294 mm',transform=ax.transAxes,color='white',fontsize=7.5,ha='center',
+    if j==0: ax.text(.5,.025,f'Translated {shift:+.3f} mm',transform=ax.transAxes,color='white',fontsize=7.5,ha='center',
                     bbox=dict(fc='black',alpha=.6,ec='none',pad=.8))
 cax=fig.add_subplot(gs[4,:]);pos=cax.get_position();cax.set_position([pos.x0+.20*pos.width,pos.y0,.60*pos.width,pos.height])
 cb=fig.colorbar(im,cax=cax,orientation='horizontal');cb.set_label(r'Common colour scale: log$_{10}$ Fe56 (counts s$^{-1}$)',fontsize=7.5)
@@ -116,15 +121,17 @@ for speed,style in ((225,'-'),(281,'-.'),(375,'--')):
     ax.plot(hh,170e-6*hh*3600*speed/1000,style,color='.7',lw=.7,zorder=0)
 ax.legend(handles=[Line2D([],[],marker=markers[s],ls=sty,color=gray,ms=3,label=f'{s} µm s$^{{-1}}$')
                    for s,sty in ((225,'-'),(281,'-.'),(375,'--'))],frameon=False,loc='upper left',fontsize=7.5)
-ax.set(xlabel='Acquisition duration (h)',ylabel='First-to-last\ndisplacement (mm)',xlim=(0,23),ylim=(0,6.2))
+ax.set(xlabel='Acquisition duration (h)',ylabel='First-to-last displacement\nfrom the fitted lag rate (mm)',xlim=(0,23),ylim=(0,6.2))
 ax.set_title('(F) 29 routine acquisitions',loc='left');ax.grid(alpha=.2,lw=.5)
-assert round(main['difference_deg'],1)==12.3
 assert 29==len(M)
 for panel in fig.axes:
     for artist in list(panel.texts) + [panel.title, panel._left_title, panel._right_title]:
         artist.set_text(re.sub(r'\(([A-F])\)', lambda m: '(' + m.group(1).lower() + ')', artist.get_text()))
 for panel in fig.axes:
     panel.xaxis.labelpad=1.5
+from matplotlib.text import Text
+for artist in fig.findobj(Text):
+    artist.set_fontsize(artist.get_fontsize()*SCALE)
 fig.canvas.draw()
 figbox=fig.bbox
 outside=[]
@@ -140,8 +147,42 @@ for artist in check_artists:
 assert not outside, outside
 for suffix in ('png','pdf','svg'):
     fig.savefig(OUT/f'Figure_3_R01_reproduced.{suffix}',dpi=600)
-audit=dict(rate_iter_ppm=ns['R_IT']*1e6,local_orientation=local,early_window=WIN['B'],
+def feature_hours(img,xx):
+    # Acquisition time of the scan lines that cross the extracted feature (threshold 5.0).
+    _,mask=fo.measure(img,xx,5.0)
+    rows=np.flatnonzero(mask.any(axis=1))
+    lines=np.flatnonzero(np.isin(np.round(ns['ys'],1),ns['uy'][rows]))
+    return [float(el_h[lines].min()),float(el_h[lines].max())]
+audit=dict(rate_iter_ppm=ns['R_IT']*1e6,starting_alignment_s=ns['ALIGN'],iterated_fit_intercept_s=ns['RES'],
+           constant_offset_s=tau_c,colour_scale_log10=[float(lo),float(hi)],array_shape=list(qc.shape),
+           local_orientation=local,early_window=WIN['B'],
            late_window=WIN['C'],whole_duration_h=whole_hours,panel_order=['a','b','c','d','e','f'],n_acquisitions=len(M),displacement_source='study_summaries/Supplementary_Data_S1.csv',
-           mapping_zero_h=tz,first_mm=float(disp_um[0]/1000),last_mm=float(disp_um[-1]/1000))
+           figure_width_mm=170*SCALE,figure_height_mm=245*SCALE,minimum_font_pt=7.5*SCALE,
+           feature_h_constant=feature_hours(qc,fo.x+shift),feature_h_mapped=feature_hours(ql,fo.x),
+           early_shift_spot_widths=abs(WIN['B']['shift_mm'])*1000/15,late_shift_spot_widths=abs(WIN['C']['shift_mm'])*1000/15,
+           blocks=dict(block=[int(b) for b in ns['blk'].block],elapsed_h=[float(v) for v in blk_h],
+                       lag_minus_constant_offset_mm=[float(v) for v in (tau_blk-tau_c)*V/1000],
+                       retained_after_iteration=[bool(v) for v in retained]),
+           n_blocks_drawn_filled=int(retained.sum()),n_blocks_drawn_open=int((~retained).sum()),
+           mapping_zero_h=tz,first_mm=float(disp_um[0]/1000),last_mm=float(disp_um[-1]/1000),
+           r01_summary_single_pass_rate_ppm=float(M[M.acquisition=='R01'].rate_ppm.iloc[0]),
+           r01_summary_first_to_last_displacement_mm=float(M[M.acquisition=='R01'].first_to_last_displacement_mm.iloc[0]),
+           input_representation='Anonymised saved-workspace signals and intervals; not a native vendor-export validation.')
 (OUT/'Figure_3_R01_reproduced_audit.json').write_text(json.dumps(audit,ensure_ascii=False,indent=2),encoding='utf-8')
 print('Saved Figure 3 reproduction from anonymised R01 inputs.')
+# Compare every number of the audit with the stored expectation.
+expected=json.loads((HERE/'expected_figure3.json').read_text(encoding='utf-8'))
+def compare(a,b,path=''):
+    if isinstance(a,dict):
+        assert isinstance(b,dict) and set(a)==set(b),(path,sorted(set(a)^set(b)))
+        return sum(compare(a[k],b[k],path+'/'+k) for k in a)
+    if isinstance(a,(list,tuple)):
+        assert len(a)==len(b),path
+        return sum(compare(x,y,path+f'[{i}]') for i,(x,y) in enumerate(zip(a,b)))
+    if isinstance(a,float) or isinstance(b,float):
+        assert abs(a-b)<=1e-9*max(1.,abs(b)),(path,a,b)
+        return 1
+    assert a==b,(path,a,b)
+    return 1
+n_values=compare(json.loads(json.dumps(audit)),expected)
+print(f'Audit matches expected_figure3.json: {n_values} values compared, relative tolerance 1e-9.')

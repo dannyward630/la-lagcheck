@@ -13,6 +13,7 @@ from .laser import load_laser, export_corrected, _time
 from .estimator import diagnose
 from .verification import export_plan, verify_written_log
 from .fallback import try_alignment_fallback
+from .signal_selection import MODES as SELECTION_MODES, select_signal
 
 
 def digest(path):
@@ -107,6 +108,17 @@ def _check_written_mapping(receipt, rate, plan, path):
     _check_written_plan(receipt, rate, plan)
 
 
+QUALIFIED_STATUS = 'supported_excluding_record_boundary_blocks'
+
+
+def _screen_summary(report):
+    """What the laser-log screen found, kept with every written log so that a changed limit stays visible."""
+    screen = report.get('laser_log_screen') or {}
+    return dict(evaluated=screen.get('evaluated'), limit_s=screen.get('limit_s'), default_limit_s=screen.get('default_limit_s'),
+                flagged_intervals=len(screen.get('flagged') or []),
+                n_flagged_at_default_limit=screen.get('n_flagged_at_default_limit'))
+
+
 def _markdown(report):
     lines = ['# Timing diagnostic report', '', f"Status: **{report['status']}**",
              f"Version: {__version__}", f"Rate estimate (µs s⁻¹): {report.get('rate_ppm')}",
@@ -115,6 +127,48 @@ def _markdown(report):
              f"Provisional (not verified) log: {report.get('provisional_file') or 'none'}", '', report.get('reason', ''),
              '', '## Input diagnostic checks', '']
     lines.extend(f"- {k}: {'pass' if v else 'not met'}" for k,v in report.get('checks', {}).items())
+    screen = report.get('laser_log_screen') or {}
+    if screen.get('evaluated'):
+        lines.extend(['', '## Laser-log line-change screen', '',
+                      f"Limit: {screen['limit_s']} s and {screen['scale_multiple']:g} times the scaled median absolute deviation "
+                      f"of up to {screen['neighbours_each_side']} neighbouring intervals on each side.",
+                      f"Largest deviation outside flagged intervals (s): {screen['largest_unflagged_abs_deviation_s']}"])
+        if screen['limit_s'] != screen['default_limit_s']:
+            lines.append(f"The limit was changed from the default {screen['default_limit_s']} s; "
+                         f"{screen['n_flagged_at_default_limit']} interval(s) would be flagged at the default limit.")
+        if screen['flagged']:
+            lines.extend(f"- after firing interval {f['after_interval']}: {f['interval_s']:.3f} s, "
+                         f"{f['deviation_s']:+.3f} s from the median of its neighbours" for f in screen['flagged'])
+            lines.append(screen['interpretation'])
+        else:
+            lines.append('No line-change interval was flagged.')
+    boundary = report.get('record_boundary_blocks') or {}
+    if boundary.get('baseline') or boundary.get('closure') or boundary.get('in_sensitivity'):
+        def listed(rows):
+            return ', '.join(f"block {r['block']} ({r['side']} of record, {r['distance_to_record_boundary_s']:.3f} s from the boundary"
+                             + (', excluded by the option' if r['excluded_from_fit_by_option'] else '') + ')' for r in rows) or 'none'
+        def variants(mapping):
+            return '; '.join(f"{k}: block(s) {', '.join(str(b) for b in v)}" for k, v in sorted(mapping.items())) or 'none'
+        lines.extend(['', '## Blocks at a record boundary', '', boundary['definition'] + '.',
+                      f"Policy: {boundary['policy']}", 'Initial fit: ' + listed(boundary['baseline']),
+                      'Iterated fit: ' + listed(boundary['closure']),
+                      'Stability alternatives: ' + variants(boundary.get('in_sensitivity') or {})])
+        if boundary['policy'] == 'exclude':
+            lines.extend(['Excluded from the reported fits by the declared option: '
+                          + (', '.join(f'block {b}' for b in boundary['excluded_blocks']) or 'none'),
+                          'Excluded in stability alternatives: ' + variants(boundary.get('excluded_in_sensitivity') or {}),
+                          'An excluded block must still agree with the fitted line. When a block is excluded from a reported fit '
+                          'or a stability alternative, an exported log remains provisional. '
+                          + boundary['limitation']])
+        else:
+            lines.append('The search-edge check applies to these blocks. If a peak lies at a boundary imposed by the record, the '
+                         'diagnosis is repeated without the scan lines within the guard of that end of the record (see record_edge_lines '
+                         'in the report); if the check is still not met, exclude_record_boundary_blocks is the declared alternative.')
+    selection = report.get('signal_selection')
+    if selection:
+        lines.extend(['', '## Matching-signal selection', '', selection['criterion'] + '.',
+                      'Selected: ' + ' + '.join(selection['selected_columns'])])
+        lines.extend(f"- {' + '.join(c['columns'])}: peak {c['peak']}" for c in selection['candidates'])
     if report.get('short_acquisition'):
         short = report['short_acquisition']
         lines.extend(['', '## Conditional short-acquisition analysis', '', short['explanation'],
@@ -138,16 +192,22 @@ def _markdown(report):
         lines.extend(f"- {k}: {'pass' if v else 'not met'}" for k,v in post['checks'].items())
     if report.get('provisional_file'):
         readback = report.get('provisional_readback') or {}
+        qualified = report.get('status') == QUALIFIED_STATUS and not report.get('provisional_failed_checks')
         lines.extend(['', '## Provisional corrected log (not verified)', '',
                       f"File: {report['provisional_file']}",
                       f"Rate applied (µs s⁻¹): {report.get('provisional_rate_ppm')} ({report.get('provisional_rate_source')})",
                       f"Mapping: {report.get('provisional_mode')}",
                       f"Failed stage: {report.get('provisional_failure_stage')}",
-                      'Failed checks: ' + (', '.join(report.get('provisional_failed_checks') or []) or str(report.get('reason') or 'see above')),
+                      ('Failed checks: none. Provisional because the declared option exclude_record_boundary_blocks was used.'
+                       if qualified else
+                       'Failed checks: ' + (', '.join(report.get('provisional_failed_checks') or []) or str(report.get('reason') or 'see above'))),
                       f"Fixed-mapping read-back: {readback.get('status')}; residual rate of the written file (µs s⁻¹): {readback.get('residual_rate_ppm')}",
                       (f"Read-back not run: {readback.get('reason')}" if readback.get('status') == 'not_run' else ''),
-                      'The written timestamps were checked against the stated mapping; the timing evidence did not pass, '
-                      'so this file is a provisional correction for the user to inspect, not a verified one.', ''])
+                      ('The written timestamps were checked against the stated mapping. All timing checks passed with the declared option, '
+                       'which does not apply the search-edge criterion to an excluded block, so this file is a provisional correction '
+                       'for the user to inspect, not a verified one.' if qualified else
+                       'The written timestamps were checked against the stated mapping; the timing evidence did not pass, '
+                       'so this file is a provisional correction for the user to inspect, not a verified one.'), ''])
     lines.extend(['', '## Reconstruction handoff', '', report.get('correction_note', 'No corrected file requested.'),
                   '', 'Original signal intensities and input files are unchanged.',
                   'Passing checks describes internal timing evidence, not independent spatial accuracy.',
@@ -209,10 +269,16 @@ def _write_provisional(out, ms, laser, report, options, analysis, reference_rate
     _check_written_mapping(receipt, rate, plan, candidate)
     what = ('the rate estimated at the original input placement' if fallback.get('adopted') else
             'the rate estimated from this acquisition' if source == 'acquisition_estimate' else 'the user-supplied reference rate')
-    note = ('Provisional, NOT verified: the input timing checks did not all pass (' +
-            (', '.join(failed) or str(report.get('reason') or 'see report')) + '). '
-            f'This log applies {what} ({rate:.3f} µs s⁻¹) as a {plan["mode"]} mapping. '
-            'Inspect the reconstruction before use and state the failed checks with any result.' + plan_note)
+    if fit_report.get('status') == QUALIFIED_STATUS and not failed:
+        note = ('Provisional, NOT verified: all timing checks passed, but only with the declared option exclude_record_boundary_blocks. '
+                + str(fit_report.get('reason') or '') + ' '
+                f'This log applies {what} ({rate:.3f} µs s⁻¹) as a {plan["mode"]} mapping. '
+                'Inspect the reconstruction before use and state the option with any result.' + plan_note)
+    else:
+        note = ('Provisional, NOT verified: the input timing checks did not all pass (' +
+                (', '.join(failed) or str(report.get('reason') or 'see report')) + '). '
+                f'This log applies {what} ({rate:.3f} µs s⁻¹) as a {plan["mode"]} mapping. '
+                'Inspect the reconstruction before use and state the failed checks with any result.' + plan_note)
     if plan['mode'] == 'rate_only':
         note += ' Determine the constant offset in the reconstruction importer; do not apply the rate a second time.'
     if fallback.get('attempted'):
@@ -229,7 +295,7 @@ def _write_provisional(out, ms, laser, report, options, analysis, reference_rate
                 diagnostic_status=report['status'], reason=report.get('reason'), readback_status=readback['status'],
                 output_file=str(candidate), output_sha256=receipt['output_sha256'], export_plan=plan,
                 full_export_diagnostic_passed=False, importer_roundtrip_tested=False,
-                instruction=note)
+                laser_log_screen=_screen_summary(report), instruction=note)
 
 
 def _publish_provisional_from_candidate(out, report, candidate, receipt, plan, post):
@@ -275,7 +341,7 @@ def _publish_provisional_from_candidate(out, report, candidate, receipt, plan, p
                 input_diagnostic_status=report.get('input_diagnostic_status'), reason=report.get('reason'),
                 readback_status='timing_checks_failed', output_file=str(final), output_sha256=receipt['output_sha256'],
                 export_plan=plan, full_export_diagnostic_passed=False, importer_roundtrip_tested=False,
-                instruction=note)
+                laser_log_screen=_screen_summary(report), instruction=note)
 
 
 def _preview_after_run(out, channel):
@@ -340,7 +406,7 @@ def _run_segments(config, out, before, segmentation, export, preview, options, a
         entry=dict(item,output=str(dest),declared_alignment_offset_s=child['analysis'].get('alignment_offset_s'))
         if item.get('on_record_count') == 0 and child['laser'].get('format','laser_state_csv') == 'laser_state_csv':
             dest.mkdir()
-            note='No firing On records in this fragment; metadata retained, no tissue image or corrected log is invented.'
+            note='No firing On records in this fragment; metadata retained, no sample image or corrected log is invented.'
             fragment=dict(status='no_firing_fragment',reason=note,source=item)
             write_json(dest/'report.json',fragment)
             entry.update(exit_code=2,status='no_firing_fragment',reason=note,preview=None)
@@ -380,6 +446,55 @@ def _run_segments(config, out, before, segmentation, export, preview, options, a
             report['preview']=dict(status='failed',error=str(exc)); code=1
             write_json(out/'preview_error.json',report['preview'])
     return code,report
+
+
+def screen_log(config_path, limit_s=1.0):
+    """Screen the laser log named in a run configuration; no signal file is read.
+
+    Contiguous sample/sequence fragments are screened separately, as in a run.
+    Exit code 0 means no flagged interval and 2 at least one.
+    """
+    config_path = Path(config_path).resolve()
+    config = json.loads(config_path.read_text(encoding='utf-8-sig'))
+    if not isinstance(config, dict) or not isinstance(config.get('laser'), dict) or not isinstance(config['laser'].get('path'), str):
+        raise InputError('Configuration must be a JSON object with laser.path')
+    if isinstance(limit_s, bool) or not isinstance(limit_s, (int, float)) or not math.isfinite(limit_s) or limit_s <= 0:
+        raise InputError('The limit must be a positive number of seconds')
+    path = (config_path.parent/config['laser']['path']).resolve()
+    if not path.is_file():
+        raise InputError('laser source does not exist')
+    laser_config = {k: v for k, v in config['laser'].items() if k != 'path'}
+    laser_config.setdefault('zero_duration_policy', 'exclude')
+    from .processing import inspect_segments
+    from .estimator import screen_line_changes
+    before = digest(path)
+    segmentation = inspect_segments(path, laser_config)
+    several = len(segmentation['segments']) > 1
+    results = []
+    for item in segmentation['segments']:
+        child = dict(laser_config)
+        entry = dict(segment=item['segment'], records=[item['start_record'], item['end_record']])
+        if several:
+            child['record_range'] = [item['start_record'], item['end_record']]
+            if item['sample']:
+                child['sample_selector'] = item['sample']
+        if item.get('on_record_count') == 0 and child.get('format', 'laser_state_csv') == 'laser_state_csv':
+            results.append(dict(entry, status='no_firing_fragment'))
+            continue
+        laser = load_laser(path, child)
+        results.append(dict(entry, n_firing_intervals=len(laser.lines),
+                            screen=screen_line_changes(laser.lines, float(limit_s))))
+    if digest(path) != before:
+        raise InputError('Laser log changed during screening')
+    flagged = sum(len(r['screen']['flagged']) for r in results if 'screen' in r)
+    evaluated = sum(1 for r in results if 'screen' in r and r['screen']['evaluated'])
+    unevaluated = len(results) - evaluated
+    # Exit code 2 also when nothing could be screened, so that an empty result is not read as a clean log.
+    status = 'flagged' if flagged else ('none_flagged' if evaluated else 'not_evaluated')
+    return (0 if status == 'none_flagged' else 2), dict(tool='la-lagcheck', version=__version__, status=status, laser=str(path),
+                                                        laser_sha256=before, flagged_intervals=flagged,
+                                                        evaluated_segments=evaluated, unevaluated_segments=unevaluated,
+                                                        segments=results)
 
 
 def run(config_path, output, export=False, export_mode=None, ms_first_sample_time=None, reference_note=None, preview=None,
@@ -426,7 +541,13 @@ def run(config_path, output, export=False, export_mode=None, ms_first_sample_tim
     if export:
         _reject_known_corrected_input(paths['laser'])
     before = {k: digest(v) for k,v in paths.items()}
-    ms_config = {k:v for k,v in config['ms'].items() if k!='path'}
+    ms_config = {k:v for k,v in config['ms'].items() if k not in ('path','signal_selection')}
+    # Default: compare the sum and each configured column by starting-alignment contrast (CSV formats).
+    selection_mode = config['ms'].get('signal_selection', 'sum' if ms_config.get('format')=='netcdf' else 'highest_alignment_peak')
+    if selection_mode not in SELECTION_MODES:
+        raise InputError("ms.signal_selection must be 'sum' or 'highest_alignment_peak'")
+    if selection_mode != 'sum' and ms_config.get('format')=='netcdf':
+        raise InputError('ms.signal_selection is available for the CSV signal formats only')
     try:
         if ms_config.get('format')=='netcdf':
             from .netcdf import load_netcdf_signal
@@ -453,7 +574,19 @@ def run(config_path, output, export=False, export_mode=None, ms_first_sample_tim
     if export:
         _validate_export_options(options, laser)
     try:
+        selection = None
+        if selection_mode == 'highest_alignment_peak':
+            # Declared option: the saved config then names the columns actually
+            # used, so previews and read-back reload the same matching signal.
+            ms, selection = select_signal(ms, laser, config['analysis'],
+                                          lambda columns: load_signal(paths['ms'], dict(ms_config, signal_columns=columns)))
+            config['ms']['signal_columns'] = list(selection['selected_columns'])
+        # The saved config fixes the matching signal that was actually used: the columns
+        # named there are summed as given, so rerunning the saved config does not select again.
+        config['ms']['signal_selection'] = 'sum'
         report, blocks = diagnose(ms, laser, config['analysis'])
+        if selection is not None:
+            report['signal_selection'] = selection
         fallback, fallback_blocks = try_alignment_fallback(ms, laser, report, config['analysis'], diagnose,
             enabled=alignment_fallback, provisional=provisional, input_offset_s=_fallback_input_offset_s)
     except (InputError,ValueError,KeyError) as exc:
@@ -553,6 +686,7 @@ def run(config_path, output, export=False, export_mode=None, ms_first_sample_tim
                        export_plan=plan, full_export_diagnostic_passed=True,
                        acquisition_identity=laser.metadata['acquisition_identity'],
                        receiver_interval_trajectory_agreement_verified=False,
+                       laser_log_screen=_screen_summary(report),
                        importer_roundtrip_tested=False, instruction=report['correction_note']))
         code = 0 if report['status']=='supported' else 2
     except Exception as exc:
@@ -607,8 +741,15 @@ def main(argv=None):
     p.add_argument('--output', required=True, help='New result directory; existing directories are rejected')
     p = sub.add_parser('inspect-netcdf', help='List classic NetCDF metadata without guessing a mapping')
     p.add_argument('path')
+    p = sub.add_parser('screen-log', help='Screen the line-change intervals of the laser log named in a run configuration; no signal file is read')
+    p.add_argument('config')
+    p.add_argument('--limit', type=float, default=1.0, help='Limit in seconds (default 1.0)')
     args = parser.parse_args(argv)
     try:
+        if args.command=='screen-log':
+            code, summary = screen_log(args.config, args.limit)
+            print(json.dumps(summary, ensure_ascii=False, indent=2, allow_nan=False))
+            return code
         if args.command=='iolite-export':
             from .iolite import export_iolite
             code, report = export_iolite(args.canonical_run, args.output)

@@ -43,7 +43,8 @@ class EstimatorTests(unittest.TestCase):
         results=[]
         for offset in (2.,8.):
             ms,laser=synthetic(100.,offset)
-            r,_=diagnose(ms,laser,{'tolerance_s':.2,'alignment_offset_s':offset})
+            # The same lines enter the blocks for both offsets, so the rates can be compared closely.
+            r,_=diagnose(ms,laser,{'tolerance_s':.2,'alignment_offset_s':offset,'skip_record_edge_lines':False})
             self.assertEqual(r['status'],'supported',r)
             results.append(r['rate_ppm'])
         self.assertAlmostEqual(*results,delta=.1)
@@ -115,7 +116,7 @@ class EstimatorTests(unittest.TestCase):
         maximum_visible=(t[-1]-t[0])/(lines[-1]['End Time']-lines[0]['Start Time'])
         self.assertLess(maximum_visible,.6)
         r,blocks=diagnose(SignalData(t,signal),LaserData(lines),
-                          {'tolerance_s':.2,'alignment_offset_s':0.})
+                          {'tolerance_s':.2,'alignment_offset_s':0.,'skip_record_edge_lines':False})
         self.assertIn(r['status'],('qc_failed','insufficient_evidence'))
         if 'coverage_fraction' in r:
             self.assertLessEqual(r['coverage_fraction'],maximum_visible+1e-9)
@@ -145,7 +146,7 @@ class EstimatorTests(unittest.TestCase):
             signal[(t>=round(row['Start Time']+lag,1)) &
                    (t<round(row['End Time']+lag,1))]=1000.
         r,blocks=diagnose(SignalData(t,signal),LaserData(lines),
-                          {'tolerance_s':.2,'alignment_offset_s':0.})
+                          {'tolerance_s':.2,'alignment_offset_s':0.,'skip_record_edge_lines':False})
         self.assertGreater(r['coverage_fraction'],.8)
         self.assertTrue(r['checks']['coverage'])
         last=next(b for b in blocks if b['block']==9)

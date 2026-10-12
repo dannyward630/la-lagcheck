@@ -1,5 +1,5 @@
-# Extracted unchanged from study estimator.
-# Source SHA256: 438063d3fd0a8794264943ac254ab429a324884f68ff0b90b5ddeb57ecfe3e22
+# Extracted from the study estimator. The code is unchanged; one comment was reworded in 0.6.0.
+# SHA256 of the extracted source before that rewording: 438063d3fd0a8794264943ac254ab429a324884f68ff0b90b5ddeb57ecfe3e22
 import numpy as np
 import pandas as pd
 MAX_SHIFT=25.0
@@ -18,7 +18,7 @@ def on_sequences(t, sig, lines):
             log_on[i0:i1] = 1.0
     # Matched filter: the log side is binary (laser on / off), the signal side keeps its
     # full log-intensity waveform. Binary-vs-binary loses contrast when the duty cycle is
-    # high, which is the case for tissue sections where only the short inter-line gap is
+    # high, which is the case for continuous rasters where only the short inter-line gap is
     # truly off.
     v = np.log10(np.clip(np.nan_to_num(np.asarray(sig, float), nan=1.0), 1, None))
     lo, hi = np.percentile(v, [5, 95])

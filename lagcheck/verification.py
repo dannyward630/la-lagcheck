@@ -7,7 +7,7 @@ import statistics
 
 from .models import InputError, LaserData
 from .laser import load_laser, _time
-from .estimator import diagnose
+from .estimator import diagnose, SUPPORTED_STATUSES
 
 
 def export_plan(ms, laser, report, options=None):
@@ -82,7 +82,10 @@ def verify_written_log(ms, laser, report, candidate, receipt, plan, analysis):
     tolerance = report['settings']['tolerance_s']
     duration = rerun.get('duration_s', math.inf)
     max_lag = max((abs(float(b['lag_s'])) for b in blocks if b.get('retained')), default=None)
-    checks = dict(full_diagnostic_supported=rerun['status']=='supported',
+    # A verified export needs an unqualified supported read-back. A read-back of a log written from a
+    # qualified or failed diagnostic is informational; the qualified status then passes its own checks.
+    accepted = ('supported',) if report.get('status') == 'supported' else SUPPORTED_STATUSES
+    checks = dict(full_diagnostic_supported=rerun['status'] in accepted,
                   residual_rate_below_threshold=finite and max(abs(x) for x in rates)<rate_limit,
                   residual_drift_within_tolerance=finite and max(abs(x) for x in rates)*1e-6*duration<=tolerance,
                   coverage=rerun.get('coverage_fraction', 0)>=report['settings']['min_coverage'],

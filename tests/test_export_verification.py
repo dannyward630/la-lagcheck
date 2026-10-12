@@ -32,6 +32,8 @@ def main(args=None):
 class ExportVerificationTests(unittest.TestCase):
     def case(self, root, rate=100.):
         config = test_cli.WorkflowTests().make_case(root)
+        config['analysis']['skip_record_edge_lines'] = False
+        (root/'config.json').write_text(json.dumps(config), encoding='utf-8')
         if rate == 0.:
             # A no-rate control with grid-aligned irregular pulses isolates
             # recovery of the 3 s constant from the separate file origins.
