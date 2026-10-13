@@ -9,7 +9,11 @@ from .iolite_adapter import adapt
 from .laser import load_laser
 from .models import InputError
 from .ms import load_signal
+from .tolerance import estimator_settings
 from .verification import verify_written_log
+
+# Records of a provisional canonical run that stay with its formatted copy.
+CARRIED_PROVISIONAL_RECORDS = ('provisional_export_eligibility', 'tolerance_resolution', 'warnings')
 
 
 def export_iolite(canonical_run, output):
@@ -104,8 +108,9 @@ def export_iolite(canonical_run, output):
         fallback = report.get('alignment_fallback') or {}
         timing_report = fallback['diagnostic'] if provisional and fallback.get('adopted') else report
         if (timing_report.get('alignment') or {}).get('offset_s') is not None:
+            # The saved config holds the tolerance in seconds as the canonical run resolved it; nothing is converted here.
             post, rerun, blocks = verify_written_log(
-                ms, laser, timing_report, candidate, receipt, plan, config['analysis'])
+                ms, laser, timing_report, candidate, receipt, plan, estimator_settings(config['analysis']))
             write_json(out / 'post_export_report.json', rerun)
             write_blocks(out, blocks, 'post_export_blocks')
             write_json(out / 'iolite_timing_verification.json', post)
@@ -145,6 +150,8 @@ def export_iolite(canonical_run, output):
                       status='compatibility_export_qc_failed',
                       receiving_software_instruction=instruction,
                       scope='Internal checks of this exact output, not a new iolite application test')
+        kept = {k: manifest[k] for k in CARRIED_PROVISIONAL_RECORDS if provisional and k in manifest}
+        result.update(kept)
         check_sources()
         verified = post is not None and post['passed'] and not provisional
         if verified or provisional:
@@ -175,6 +182,10 @@ def export_iolite(canonical_run, output):
             'Full saved-byte timing checks: ' + str(None if post is None else post['passed']),
             'Actual importer / GUI tested by this command: False', '',
             result['receiving_software_instruction'], '',
+            *(['Provisional export eligibility of the canonical run: '
+               + str((kept.get('provisional_export_eligibility') or {}).get('status')) + '; evidence '
+               + str((kept.get('provisional_export_eligibility') or {}).get('evidence_completeness')) + '.',
+               *kept.get('warnings', []), ''] if kept else []),
             'format_stage contains the preserved formatting-only candidate and its row map.',
             'Only a final correction_manifest.json without INCOMPLETE.json marks a verified publication;',
             'a provisional_manifest.json marks a provisional file.',
@@ -187,6 +198,7 @@ def export_iolite(canonical_run, output):
             if provisional:
                 carried['iolite_readback_status'] = ('not_run' if post is None else
                                                      'passed' if post['passed'] else 'timing_checks_failed')
+                carried.update(kept)
             write_json(out / name, dict(
                 carried, version=__version__, compatibility_adapter=True, mode=plan['mode'],
                 provisional=provisional, verified=not provisional,

@@ -37,7 +37,7 @@ def read_csv(path):
 
 class AdapterTests(unittest.TestCase):
     def setUp(self):
-        self.temp = tempfile.TemporaryDirectory(prefix="adapter_test_", dir=HERE)
+        self.temp = tempfile.TemporaryDirectory(prefix="adapter_test_")
         self.root = Path(self.temp.name)
 
     def tearDown(self):

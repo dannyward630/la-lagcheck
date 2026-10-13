@@ -98,12 +98,18 @@ def collect(ask=None, tell=None):
     tolerance = _positive(ask('Acceptable error for this use (no universal default): '), 'Tolerance')
     analysis = {}
     if kind=='2':
+        # The run converts micrometres to seconds itself, once, with the declared speed, and records the conversion.
         speed = _positive(ask('Stage speed in micrometres per second: '), 'Stage speed')
         analysis['scan_speed_um_s'] = speed
-        tolerance /= speed
+        analysis['tolerance_um'] = tolerance
+        # The seconds shown here follow from the declared speed alone. The run accepts or refuses the request once it has read the log.
+        stated = (f'{tolerance:g} µm ({tolerance/speed:g} s at the declared speed of {speed:g} µm s⁻¹; '
+                  'the run confirms this value only after it has read the laser log)')
     elif kind!='1':
         raise InputError('Choose tolerance option 1 or 2')
-    analysis['tolerance_s'] = tolerance
+    else:
+        analysis['tolerance_s'] = tolerance
+        stated = f'{tolerance:g} s'
     mode = ask('Export: 1=rate correction (set start offset on import), 2=rate and constant with a verified time reference [1]: ').strip() or '1'
     options = {'mode':'rate_only'}
     if mode=='2':
@@ -119,5 +125,5 @@ def collect(ask=None, tell=None):
         raise InputError('Result directory already exists; choose a new name')
     config = dict(ms=dict(path=str(ms_path), format='agilent_masshunter_csv', signal_columns=selected),
                   laser=laser, analysis=analysis, export=options)
-    tell(f'Running diagnosis, protected export and complete CSV re-check; timing tolerance {tolerance:g} s.')
+    tell(f'Running diagnosis, protected export and complete CSV re-check; timing tolerance {stated}.')
     return config, str(output)

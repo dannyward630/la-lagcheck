@@ -187,7 +187,7 @@ class RecordBoundaryWorkflowTests(unittest.TestCase):
         (root/'config.json').write_text(json.dumps(config), encoding='utf-8')
 
     def test_option_gives_a_qualified_status_and_only_a_provisional_log(self):
-        with tempfile.TemporaryDirectory(dir=Path(__file__).parent) as folder:
+        with tempfile.TemporaryDirectory() as folder:
             root = Path(folder); self.write_case(root, exclude_record_boundary_blocks=True)
             code, report = _run(root/'config.json', root/'out', True)      # default preview is drawn
             self.assertEqual((code, report['status']), (2, 'supported_excluding_record_boundary_blocks'))
@@ -210,7 +210,7 @@ class RecordBoundaryWorkflowTests(unittest.TestCase):
             self.assertEqual(manifest['laser_log_screen']['limit_s'], 1.0)
 
     def test_default_run_names_the_record_boundary_block(self):
-        with tempfile.TemporaryDirectory(dir=Path(__file__).parent) as folder:
+        with tempfile.TemporaryDirectory() as folder:
             root = Path(folder); self.write_case(root)
             code, report = run(root/'config.json', root/'out')
             self.assertEqual((code, report['status']), (2, 'qc_failed'))
@@ -321,7 +321,7 @@ class ReviewFindingsTests(unittest.TestCase):
             select_signal(flat, laser, {'tolerance_s': .2, 'coarse_window_s': float('inf')}, lambda cols: single)
 
     def test_screen_log_rejects_a_non_object_configuration_and_marks_nothing_evaluated(self):
-        with tempfile.TemporaryDirectory(dir=Path(__file__).parent) as folder:
+        with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
             (root/'bad.json').write_text('[]', encoding='utf-8')
             with self.assertRaises(InputError):
@@ -403,7 +403,7 @@ class SignalSelectionTests(unittest.TestCase):
         return config
 
     def test_cli_records_the_selection_and_saves_the_columns_used(self):
-        with tempfile.TemporaryDirectory(dir=Path(__file__).parent) as folder:
+        with tempfile.TemporaryDirectory() as folder:
             root = Path(folder); self.write_case(root, 'highest_alignment_peak')
             code, report = run(root/'config.json', root/'out')
             self.assertEqual(report['signal_selection']['selected_columns'], ['element'])
@@ -416,7 +416,7 @@ class SignalSelectionTests(unittest.TestCase):
             self.assertIn('Matching-signal selection', (root/'out/report.md').read_text(encoding='utf-8'))
 
     def test_cli_default_selects_by_alignment_peak(self):
-        with tempfile.TemporaryDirectory(dir=Path(__file__).parent) as folder:
+        with tempfile.TemporaryDirectory() as folder:
             root = Path(folder); self.write_case(root)
             _, report = run(root/'config.json', root/'out')
             self.assertEqual(report['signal_selection']['mode'], 'highest_alignment_peak')
@@ -424,7 +424,7 @@ class SignalSelectionTests(unittest.TestCase):
             self.assertEqual(report['input_metadata']['ms']['signal_columns'], ['element'])
 
     def test_cli_sum_keeps_the_configured_columns(self):
-        with tempfile.TemporaryDirectory(dir=Path(__file__).parent) as folder:
+        with tempfile.TemporaryDirectory() as folder:
             root = Path(folder); self.write_case(root, 'sum')
             _, report = run(root/'config.json', root/'out')
             self.assertNotIn('signal_selection', report)
@@ -433,7 +433,7 @@ class SignalSelectionTests(unittest.TestCase):
     def test_saved_config_replays_the_same_matching_signal(self):
         # Rerunning the config written by a run must not select a different signal.
         for selection in ('sum', None, 'highest_alignment_peak'):
-            with self.subTest(selection=selection), tempfile.TemporaryDirectory(dir=Path(__file__).parent) as folder:
+            with self.subTest(selection=selection), tempfile.TemporaryDirectory() as folder:
                 root = Path(folder); self.write_case(root, selection)
                 _, first = run(root/'config.json', root/'out')
                 saved = json.loads((root/'out/config.json').read_text(encoding='utf-8'))
@@ -447,7 +447,7 @@ class SignalSelectionTests(unittest.TestCase):
                 self.assertNotIn('signal_selection', second)
 
     def test_cli_rejects_an_unknown_selection_mode(self):
-        with tempfile.TemporaryDirectory(dir=Path(__file__).parent) as folder:
+        with tempfile.TemporaryDirectory() as folder:
             root = Path(folder); self.write_case(root, 'best')
             with self.assertRaises(InputError):
                 run(root/'config.json', root/'out')
@@ -464,14 +464,14 @@ class ScreenLogCommandTests(unittest.TestCase):
             'time_kind': 'numeric', 'time_unit': 's', 'start_column': 'start', 'end_column': 'end'}}), encoding='utf-8')
 
     def test_screen_log_needs_no_signal_file(self):
-        with tempfile.TemporaryDirectory(dir=Path(__file__).parent) as folder:
+        with tempfile.TemporaryDirectory() as folder:
             root = Path(folder); self.write_log(root, regular_lines())
             code, summary = screen_log(root/'config.json')
             self.assertEqual((code, summary['flagged_intervals']), (0, 0))
             self.assertEqual(summary['segments'][0]['n_firing_intervals'], 120)
 
     def test_screen_log_exit_code_marks_a_flagged_interval(self):
-        with tempfile.TemporaryDirectory(dir=Path(__file__).parent) as folder:
+        with tempfile.TemporaryDirectory() as folder:
             root = Path(folder); lines = regular_lines()
             for row in lines[48:]:
                 row['Start Time'] += 60.2; row['End Time'] += 60.2

@@ -256,7 +256,8 @@ def load_signal(path, config):
                     raise InputError("CSV header contains empty or duplicate column names.")
                 missing = [name for name in [time_column] + channels if name not in header]
                 if missing:
-                    raise InputError(f"Columns not found in signal file: {missing!r}.")
+                    raise InputError(f"Columns not found in signal file: {missing!r}. "
+                                     f"Columns in the file: {header!r}.")
                 if named and any(not _ISOTOPE.fullmatch(c) for c in channels):
                     raise InputError(
                         "Named MassHunter signal_columns must be isotope labels such as Fe56; "

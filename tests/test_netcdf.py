@@ -36,7 +36,7 @@ class NetCDFTests(unittest.TestCase):
         self.assertEqual(result.metadata['variable_dimensions']['Fe'],['sample'])
 
     def setUp(self):
-        self.temp = tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parent)
+        self.temp = tempfile.TemporaryDirectory()
         self.root = Path(self.temp.name)
         self.config = {"time_variable": "clock", "time_unit": "ms", "signal_variables": ["Fe", "Si"]}
 

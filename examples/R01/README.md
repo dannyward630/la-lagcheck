@@ -25,8 +25,9 @@ matching signal.
   The saved workspace represents the corresponding very short interval as
   approximately 0.48 microseconds. The two representations are kept separate.
 - `reference_mapping.json` and `reference_blocks.csv` specify the mapping used for
-  Figure 3: the default diagnosis with automatic starting alignment and a 0.2 s
-  tolerance. `expected_figure3.json` records the reported comparison.
+  Figure 3: the diagnosis with the default settings and automatic starting
+  alignment. Its tolerance, which has no default and must be given, was set to
+  0.2 s. `expected_figure3.json` records the reported comparison.
 - `reconstruction.py` and `feature_orientation.py` reproduce the image arrays and
   local-feature extraction. `reproduce_figure3.py` writes the complete comparison
   and checks its numbers against `expected_figure3.json`.
@@ -53,6 +54,11 @@ python -B -X utf8 examples/R01/reestimate_default.py --output ../R01_default
 Use a new output directory for each command. The first command writes PNG, PDF
 and SVG figures and a numerical audit. It reconstructs both images from the
 signals and firing intervals; no precomputed biological image or mask is included.
+
+The figure is drawn with Arial. If Arial is not installed, the script uses DejaVu
+Sans, which is distributed with matplotlib, and prints one line that says so.
+The numerical audit is the same in both cases. Without Arial the lettering
+differs from the published figure, so the PNG is not pixel-identical to it.
 
 The second command excludes the one terminal missing observation from rate
 estimation, leaving a single contiguous segment of 505015 observations. No

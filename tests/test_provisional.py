@@ -34,7 +34,7 @@ def main(args=None):
 
 class ProvisionalExportTests(unittest.TestCase):
     def setUp(self):
-        self.temp = tempfile.TemporaryDirectory(dir=Path(__file__).parent)
+        self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
 
@@ -127,7 +127,7 @@ class ProvisionalExportTests(unittest.TestCase):
 class ProvisionalSafeguardTests(unittest.TestCase):
     """Regression tests for the R21 review: no second stretch, read-back stage, configuration errors, byte binding."""
     def setUp(self):
-        self.temp = tempfile.TemporaryDirectory(dir=Path(__file__).parent)
+        self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
 
@@ -246,7 +246,7 @@ class ProvisionalSafeguardTests(unittest.TestCase):
 
 class ProvisionalIoliteExportTests(unittest.TestCase):
     def test_iolite_export_keeps_provisional_marking(self):
-        with tempfile.TemporaryDirectory(dir=Path(__file__).parent) as folder:
+        with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
             inputs = make_demo(root / 'inputs')
             config = json.loads((inputs / 'config.json').read_text(encoding='utf-8'))

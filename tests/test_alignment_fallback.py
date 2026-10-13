@@ -21,7 +21,7 @@ import test_cli
 
 class AlignmentFallbackTests(unittest.TestCase):
     def setUp(self):
-        self.temp = tempfile.TemporaryDirectory(dir=Path(__file__).parent)
+        self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
 
@@ -248,7 +248,7 @@ class AlignmentFallbackTests(unittest.TestCase):
         cfg=self.json(root/'config.json'); del cfg['analysis']['alignment_offset_s']
         (root/'config.json').write_text(json.dumps(cfg),encoding='utf-8')
         path=root/'laser.csv'
-        rows=list(csv.reader(path.open(encoding='utf-8',newline='')))
+        with path.open(encoding='utf-8',newline='') as f: rows=list(csv.reader(f))
         rows[1:1]=[['2026-01-01 00:00:00','Synthetic A','1','10','On','zero'],
                    ['2026-01-01 00:00:00','','','','Off','zero']]
         # A second selected fragment begins later on the same original MS axis.

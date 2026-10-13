@@ -20,7 +20,7 @@ import test_cli
 
 class DefaultOutputTests(unittest.TestCase):
     def setUp(self):
-        self.temp=tempfile.TemporaryDirectory(dir=Path(__file__).parent)
+        self.temp=tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root=Path(self.temp.name)
 
@@ -78,7 +78,7 @@ class DefaultOutputTests(unittest.TestCase):
     def test_zero_duration_is_recorded_but_negative_duration_remains_error(self):
         root,cfg=self.case()
         path=root/'laser.csv'
-        rows=list(csv.reader(path.open(newline='')))
+        with path.open(newline='') as f: rows=list(csv.reader(f))
         rows.insert(1,['0','0','zero'])
         with path.open('w',newline='') as f: csv.writer(f).writerows(rows)
         original=digest(path)
@@ -119,7 +119,7 @@ class DefaultOutputTests(unittest.TestCase):
 
     def test_no_overlap_gives_signal_view_and_large_grid_is_bounded(self):
         root,cfg=self.case(alignment_offset_s=1e9)
-        rows=list(csv.reader((root/'laser.csv').open(newline='')))
+        with (root/'laser.csv').open(newline='') as f: rows=list(csv.reader(f))
         with (root/'laser.csv').open('w',newline='') as f: csv.writer(f).writerows(rows[:20])
         code,r=run(root/'config.json',self.root/'empty')
         meta=self.read(self.root/'empty/preview_pair.json')
@@ -167,7 +167,7 @@ class DefaultOutputTests(unittest.TestCase):
         root,cfg=self.case()
         cfg['analysis'].pop('alignment_offset_s')
         (root/'config.json').write_text(json.dumps(cfg),encoding='utf-8')
-        rows=list(csv.reader((root/'laser.csv').open(newline='')))
+        with (root/'laser.csv').open(newline='') as f: rows=list(csv.reader(f))
         with (root/'laser.csv').open('w',newline='') as f: csv.writer(f).writerows(rows[:20])
         code,r=run(root/'config.json',self.root/'raw')
         meta=self.read(self.root/'raw/preview_pair.json')

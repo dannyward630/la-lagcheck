@@ -195,7 +195,9 @@ def _record_boundary_sides(df, closed_df, variants):
 def _measure(t, y, lines, settings, overrides=None):
     kw = {k: settings[k] for k in ('n_blocks', 'max_shift', 'peak_min', 'margin_min', 'reject_tol')}
     kw.update(overrides or {})
-    with contextlib.redirect_stdout(io.StringIO()):
+    # A block without a usable correlation peak makes the core subtract two infinities for its margin.
+    # The NaN margin fails the gates below as before; only the floating-point warning is silenced here.
+    with contextlib.redirect_stdout(io.StringIO()), np.errstate(invalid='ignore'):
         _, df = core.analyse_loaded(t, y, lines, 'acquisition', **kw)
     if df is not None:
         dt=float((t[-1]-t[0])/(len(t)-1))

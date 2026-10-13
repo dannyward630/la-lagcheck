@@ -93,6 +93,15 @@ def _record_subset(indices, config, count):
     return selected
 
 
+def _sample_names(labels, sample_column, limit=20):
+    """Sample names of the log in order of first appearance, for error messages."""
+    names = list(dict.fromkeys(label for label in labels if label))
+    listed = ", ".join(repr(name) for name in names[:limit])
+    if len(names) > limit:
+        listed += f" and {len(names) - limit} more"
+    return f"Sample names in column {str(sample_column).strip()!r}: {listed or 'none'}"
+
+
 def _selected_rows(rows, header, config, fmt):
     explicit = config.get("sample_column")
     sample_column = explicit if explicit is not None else ("Comment" if fmt in ("laser_state_csv", new_wave.FORMAT) else None)
@@ -120,12 +129,13 @@ def _selected_rows(rows, header, config, fmt):
     names = set(labels) - {""}
     if selector is None:
         if len(names) > 1:
-            raise InputError("Multiple samples: set sample_column and sample_selector")
+            raise InputError("Multiple samples: set sample_column and sample_selector. "
+                             + _sample_names(labels, sample_column))
         # With a single acquisition, retain its leading metadata as well.
         return _record_subset(list(range(len(rows))),config,len(rows)), labels, next(iter(names), "")
     indices = [i for i, label in enumerate(labels) if label == selector]
     if not indices:
-        raise InputError(f"Selected sample {selector!r} was not found")
+        raise InputError(f"Selected sample {selector!r} was not found. " + _sample_names(labels, sample_column))
     record_range = config.get('record_range')
     if record_range is not None:
         if (not isinstance(record_range, list) or len(record_range) != 2

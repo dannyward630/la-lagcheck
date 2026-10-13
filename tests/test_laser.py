@@ -10,7 +10,7 @@ from lagcheck.models import InputError
 
 class LaserTests(unittest.TestCase):
     def setUp(self):
-        self.temp = tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parent)
+        self.temp = tempfile.TemporaryDirectory()
         self.root = Path(self.temp.name)
 
     def tearDown(self):

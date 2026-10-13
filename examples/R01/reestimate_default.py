@@ -3,10 +3,11 @@
 The matching signal is chosen as the program does by default for CSV inputs:
 the C13+Fe56 sum, C13 and Fe56 are compared by the peak of the automatic
 starting-alignment search, and the candidate with the highest peak is used.
-The diagnosis then runs with automatic starting alignment and a 0.2 s
-tolerance. Its rate, starting alignment, iterated-fit intercept, retained
-blocks and block lags are compared with reference_mapping.json and
-reference_blocks.csv, which define the mapping used for Figure 3.
+The diagnosis then runs with automatic starting alignment. The tolerance has
+no default and is given here as 0.2 s. The rate, starting alignment,
+iterated-fit intercept, retained blocks and block lags are compared with
+reference_mapping.json and reference_blocks.csv, which define the mapping used
+for Figure 3.
 
 A second run declares the saved input placement (alignment_offset_s = 0) and
 is reported for comparison. The earlier option exclude_record_boundary_blocks

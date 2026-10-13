@@ -54,7 +54,7 @@ class ExportVerificationTests(unittest.TestCase):
         return config
 
     def test_affine_restores_known_numeric_coordinate_without_double_offset(self):
-        with tempfile.TemporaryDirectory(dir=Path(__file__).parent) as folder:
+        with tempfile.TemporaryDirectory() as folder:
             root=Path(folder); config=self.case(root,0.)
             code,r=run(root/'config.json',root/'out',True,'affine','0','Synthetic MS first sample is 0 s')
             self.assertEqual(code,0,r.get('post_export_verification'))
@@ -76,7 +76,7 @@ class ExportVerificationTests(unittest.TestCase):
     def test_wrong_rate_with_valid_csv_and_truthful_hash_is_rejected(self):
         def bad_export(laser,path,rate,**kwargs):
             return export_corrected(laser,path,0,**kwargs)
-        with tempfile.TemporaryDirectory(dir=Path(__file__).parent) as folder:
+        with tempfile.TemporaryDirectory() as folder:
             root=Path(folder); self.case(root)
             with patch('lagcheck.cli.export_corrected',side_effect=bad_export):
                 code,r=run(root/'config.json',root/'out',True)
@@ -97,7 +97,7 @@ class ExportVerificationTests(unittest.TestCase):
             self.assertTrue(r['provisional_note'].startswith('No provisional log'))
 
     def test_affine_grid_quantization_can_honestly_prevent_export(self):
-        with tempfile.TemporaryDirectory(dir=Path(__file__).parent) as folder:
+        with tempfile.TemporaryDirectory() as folder:
             root=Path(folder);self.case(root)
             code,r=run(root/'config.json',root/'out',True,'affine','0','Known synthetic coordinate')
             self.assertEqual(r['input_diagnostic_status'],'supported')
@@ -111,7 +111,7 @@ class ExportVerificationTests(unittest.TestCase):
         def bad_export(laser,path,rate,**kwargs):
             kwargs['offset_seconds']=float(kwargs['offset_seconds'])+4.
             return export_corrected(laser,path,rate,**kwargs)
-        with tempfile.TemporaryDirectory(dir=Path(__file__).parent) as folder:
+        with tempfile.TemporaryDirectory() as folder:
             root=Path(folder);self.case(root)
             with patch('lagcheck.cli.export_corrected',side_effect=bad_export):
                 code,r=run(root/'config.json',root/'out',True,'affine','0','Synthetic reference')
@@ -132,7 +132,7 @@ class ExportVerificationTests(unittest.TestCase):
             receipt=export_corrected(laser,path,rate,**kwargs)
             path.write_bytes(path.read_bytes()+b'CORRUPTED\n')
             return receipt
-        with tempfile.TemporaryDirectory(dir=Path(__file__).parent) as folder:
+        with tempfile.TemporaryDirectory() as folder:
             root=Path(folder);self.case(root)
             with patch('lagcheck.cli.export_corrected',side_effect=corrupt),contextlib.redirect_stderr(io.StringIO()):
                 code=main(['run',str(root/'config.json'),'--output',str(root/'out'),'--export'])
@@ -142,7 +142,7 @@ class ExportVerificationTests(unittest.TestCase):
             self.assertFalse((root/'out/correction_manifest.json').exists())
 
     def test_affine_does_not_guess_missing_reference(self):
-        with tempfile.TemporaryDirectory(dir=Path(__file__).parent) as folder:
+        with tempfile.TemporaryDirectory() as folder:
             root=Path(folder);self.case(root)
             with self.assertRaisesRegex(InputError,'no clock origin is guessed'):
                 run(root/'config.json',root/'out',True,'affine')
@@ -154,7 +154,7 @@ class ExportVerificationTests(unittest.TestCase):
             source=Path(args[1].metadata['source_path'])
             source.write_bytes(source.read_bytes()+b'\n')
             return result
-        with tempfile.TemporaryDirectory(dir=Path(__file__).parent) as folder:
+        with tempfile.TemporaryDirectory() as folder:
             root=Path(folder);self.case(root)
             with patch('lagcheck.cli.verify_written_log',side_effect=changed),contextlib.redirect_stderr(io.StringIO()):
                 code=main(['run',str(root/'config.json'),'--output',str(root/'out'),'--export'])

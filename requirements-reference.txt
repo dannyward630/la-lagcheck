@@ -1,5 +1,7 @@
-# Exact dependencies for the tested Python 3.12.7 environment.
+# Exact dependencies for the tested Python 3.12.5 environment.
 numpy==1.26.4
 pandas==2.2.2
 scipy==1.13.1
 matplotlib==3.9.2
+# Test runner for the package tests (python -m pytest tests).
+pytest==9.1.1

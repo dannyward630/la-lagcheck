@@ -1,64 +1,102 @@
 {
-  "software_version": "0.7.0",
+  "software_version": "0.8.0",
   "environment": {
-    "python": "3.12.7",
+    "python": "3.12.5",
     "numpy": "1.26.4",
     "pandas": "2.2.2",
     "scipy": "1.13.1",
-    "matplotlib": "3.9.2"
+    "matplotlib": "3.9.2",
+    "pytest": "9.1.1"
   },
   "source_code": {
-    "python_files": 50,
-    "modified_in_comments_or_docstrings_only": [
-      "lagcheck/signal_selection.py",
-      "examples/R01/reconstruction.py"
+    "python_files": 55,
+    "scope": "Byte comparison with the 0.7.0 release. lagcheck/reference_core.py is unchanged. lagcheck/estimator.py differs only in that a floating-point warning from blocks without a usable correlation peak is not printed.",
+    "new_python_files_since_0.7.0": [
+      "lagcheck/eligibility.py",
+      "lagcheck/tolerance.py",
+      "tests/test_provisional_eligibility.py",
+      "tests/test_report_text.py",
+      "tests/test_tolerance_distance.py"
     ],
-    "scope": "Byte comparison with the 0.6.0 release; the correlation core is unchanged. Fields named since_0.5.0 are not repeated; the 0.6.0 comparison supersedes them.",
-    "new_python_files_since_0.6.0": [
+    "python_files_modified_since_0.7.0": [
       "examples/R01/reestimate_default.py",
-      "tests/test_record_edge_lines.py"
-    ],
-    "python_files_modified_since_0.6.0": [
+      "examples/R01/reproduce_figure3.py",
       "lagcheck/__init__.py",
       "lagcheck/cli.py",
       "lagcheck/estimator.py",
-      "lagcheck/signal_selection.py",
+      "lagcheck/iolite.py",
+      "lagcheck/laser.py",
+      "lagcheck/ms.py",
+      "lagcheck/visualization.py",
+      "lagcheck/wizard.py",
+      "tests/test_acquisition_identity.py",
       "tests/test_alignment_fallback.py",
+      "tests/test_cli.py",
       "tests/test_default_output.py",
-      "tests/test_estimator.py",
       "tests/test_export_verification.py",
+      "tests/test_iolite_adapter.py",
+      "tests/test_iolite_adapter_r23.py",
+      "tests/test_iolite_workflow.py",
+      "tests/test_laser.py",
       "tests/test_log_screen_and_options.py",
+      "tests/test_ms.py",
+      "tests/test_netcdf.py",
+      "tests/test_preview.py",
       "tests/test_provisional.py",
-      "examples/R01/reconstruction.py",
-      "examples/R01/reproduce_figure3.py"
+      "tests/test_wizard.py"
     ],
-    "removed_python_files_since_0.6.0": [
-      "examples/R01/reestimate_posthoc.py"
-    ]
+    "modified_in_comments_or_docstrings_only": [
+      "examples/R01/reestimate_default.py"
+    ],
+    "removed_python_files_since_0.7.0": []
   },
   "unit_tests": {
-    "run": 224,
-    "passed": 223,
+    "run": 323,
+    "passed": 322,
     "skipped": 1,
     "skip_reason": "Optional private reference fixture unavailable",
     "runner": "python -m unittest discover -s tests"
   },
   "pytest": {
-    "passed": 240,
+    "passed": 339,
     "skipped": 1,
     "subtests_passed": 118,
+    "runner": "python -m pytest -q -p no:cacheprovider tests",
     "note": "pytest also collects the function-style tests of tests/test_new_wave_short.py, which unittest discovery does not"
   },
   "chromium_grating": {
     "automatic_iterated_rate_ppm": 173.11258783602625,
-    "declared_iterated_rate_ppm": 173.05804299808756,
-    "declared_readback_residual_rate_ppm": 0.12545095339121373,
+    "declared_iterated_rate_ppm": 173.05804299808747,
+    "declared_readback_residual_rate_ppm": 0.12545095339121354,
     "both_numerical_verifiers": "matched",
     "flagged_line_change_intervals": 0,
     "largest_unflagged_line_change_deviation_s": 0.3994999999999891,
-    "rates_equal_to_0.5.0": true,
-    "rates_equal_to_0.6.0_within_1e-9": true,
-    "record_edge_lines_applied": false
+    "record_edge_lines_applied": false,
+    "rates_equal_to_0.7.0_within_1e-9": true,
+    "provisional_export_eligibility": {
+      "automatic": "not_blocked",
+      "declared": "not_blocked"
+    },
+    "affine_logs": {
+      "automatic_affine": {
+        "exit_code": 0,
+        "status": "supported",
+        "readback_residual_rate_ppm": 0.10442991032827022,
+        "coverage_fraction": 0.999540784259613,
+        "heldout_max_s": 0.005658407779361066,
+        "provisional_export_eligibility": "not_blocked",
+        "written_log": "corrected_laser_log.csv"
+      },
+      "declared_affine": {
+        "exit_code": 2,
+        "status": "export_qc_failed",
+        "readback_residual_rate_ppm": 0.20926164006378908,
+        "coverage_fraction": 0.9995407842345649,
+        "heldout_max_s": 0.0049945499769129984,
+        "provisional_export_eligibility": "not_blocked",
+        "written_log": "provisional_laser_log.csv"
+      }
+    }
   },
   "R01": {
     "status": "supported",
@@ -67,14 +105,14 @@
       "Fe56"
     ],
     "candidate_alignment_peaks": {
-      "C13+Fe56": 0.4275816538969,
-      "C13": 0.44094109460425124,
-      "Fe56": 0.4835876070439296
+      "C13+Fe56": 0.42758165389694824,
+      "C13": 0.4409410946042926,
+      "Fe56": 0.4835876070439812
     },
-    "single_pass_rate_ppm": 169.7961267682242,
-    "iterated_rate_ppm": 169.05931388632462,
+    "single_pass_rate_ppm": 169.79612676822413,
+    "iterated_rate_ppm": 169.05931388632453,
     "reference_rate_ppm": 169.05931388632462,
-    "absolute_rate_difference_ppm": 0.0,
+    "absolute_rate_difference_ppm": 8.526512829121202e-14,
     "starting_alignment_s": 1.7820828369176522,
     "scan_lines_left_out_at_start": 3,
     "scan_lines_left_out_at_end": 0,
@@ -92,7 +130,7 @@
     ],
     "record_boundary_blocks": [],
     "declared_placement_status": "supported",
-    "declared_placement_iterated_rate_ppm": 169.05999859650836,
+    "declared_placement_iterated_rate_ppm": 169.0599985965084,
     "flagged_line_change_intervals": 0,
     "finite_segment": [
       0,
@@ -133,13 +171,13 @@
               5.389427542888671
             ],
             "axis": [
-              0.43715861860363303,
-              0.899384424025991
+              0.4371586186036333,
+              0.8993844240259907
             ],
-            "angle_deg": 25.922729875611875,
+            "angle_deg": 25.922729875611893,
             "eigenvalues": [
-              0.014827428104970088,
-              0.057912644115496785
+              0.014827428104970066,
+              0.05791264411549673
             ],
             "threshold": 4.9
           },
@@ -150,17 +188,17 @@
               5.388590290394121
             ],
             "axis": [
-              0.221100113694748,
+              0.22110011369474802,
               0.9752511162383611
             ],
-            "angle_deg": 12.773656173259461,
+            "angle_deg": 12.773656173259463,
             "eigenvalues": [
               0.016829195200291504,
               0.051224251479153805
             ],
             "threshold": 4.9
           },
-          "difference_deg": 13.149073702352414
+          "difference_deg": 13.14907370235243
         },
         {
           "threshold": 5.0,
@@ -171,12 +209,12 @@
               5.388567958548929
             ],
             "axis": [
-              0.4202475215529434,
+              0.42024752155294337,
               0.907409510986417
             ],
-            "angle_deg": 24.850215543658283,
+            "angle_deg": 24.85021554365828,
             "eigenvalues": [
-              0.012210798164788175,
+              0.012210798164788164,
               0.055510578595167615
             ],
             "threshold": 5.0
@@ -193,12 +231,12 @@
             ],
             "angle_deg": 12.590642375382895,
             "eigenvalues": [
-              0.013352396434871966,
-              0.04990700738655762
+              0.013352396434871969,
+              0.049907007386557616
             ],
             "threshold": 5.0
           },
-          "difference_deg": 12.259573168275388
+          "difference_deg": 12.259573168275384
         },
         {
           "threshold": 5.1,
@@ -209,13 +247,13 @@
               5.343867181457219
             ],
             "axis": [
-              0.42535408639425065,
-              0.9050270168275156
+              0.42535408639425126,
+              0.9050270168275154
             ],
-            "angle_deg": 25.173077982716574,
+            "angle_deg": 25.173077982716613,
             "eigenvalues": [
-              0.011169620430030145,
-              0.03859874618253439
+              0.011169620430030142,
+              0.03859874618253436
             ],
             "threshold": 5.1
           },
@@ -226,52 +264,183 @@
               5.3939696967545885
             ],
             "axis": [
-              0.24163027794364705,
+              0.24163027794364736,
               0.9703683881809402
             ],
-            "angle_deg": 13.98278067732458,
+            "angle_deg": 13.982780677324596,
             "eigenvalues": [
-              0.012316420507719025,
-              0.04695864986400754
+              0.012316420507719032,
+              0.046958649864007496
             ],
             "threshold": 5.1
           },
-          "difference_deg": 11.190297305391994
+          "difference_deg": 11.190297305392017
         }
       ],
       "scope": "A feature selected after reconstruction; neither global shear nor an independently measured direction in the sample."
     },
     "note": "Values written by reproduce_figure3.py in this validation run; its audit matches expected_figure3.json (171 values, relative tolerance 1e-9)"
   },
-  "study_repeat": {
-    "default_settings_runs_compared_with_0.5.0": 56,
-    "runs_differing_in_rate_retained_blocks_or_earlier_checks": 0,
-    "acquisitions_whose_status_changed_through_the_laser_log_screen": [
-      "R05"
-    ],
-    "scope": "R01 to R28 from saved workspaces under automatic and declared starting alignment; inputs are not distributed"
+  "comparison_with_0.7.0": {
+    "environment": {
+      "python": "3.12.5",
+      "numpy": "2.2.6",
+      "pandas": "2.3.1",
+      "scipy": "1.17.1",
+      "h5py": "3.16.0",
+      "note": "Both releases were run in this environment for the comparison; it is not the pinned reference environment of the tests"
+    },
+    "r01_to_r28": {
+      "result_sets": 248,
+      "result_sets_identical": 248,
+      "composition": "R01 to R28 under four settings (the defaults, the channel sum as matching signal, every scan line, and both) and automatic and declared starting alignment, 224; the corrected inputs of R05, R07 and R14 under the same, 24",
+      "compared": "The complete diagnostic report and block table of every result set (the rate of every alternative setting, every step of the iteration, the residual fit and the laser-log screen included) and the record of every matching-signal selection, from the 0.7.0 release and from this release run on the same computer; the key sets must be the same on both sides and every value exactly equal",
+      "complete_results": {
+        "report_files": 248,
+        "selection_records": 31,
+        "files_identical": 279,
+        "values_compared": 812647,
+        "differences": 0
+      },
+      "matching_signal_selection_records_identical": true
+    },
+    "command_line_runs": {
+      "runs": 54,
+      "composition": "R29 under 12 settings, the two clock-comparison scans under 32, the three short-record examples under two signal settings (6), and the original-file export of R05 (4)",
+      "baseline": "The same commands run with the 0.7.0 release on the same computer",
+      "exit_codes_differing": 0,
+      "status_rate_or_checks_differing": 0,
+      "csv_files_identical": 66,
+      "csv_files_differing": 0,
+      "runs_with_changed_existing_fields": 4,
+      "runs_that_no_longer_write_a_provisional_log": 2,
+      "runs_whose_provisional_notes_gained_a_pointer_to_the_warnings": 2,
+      "changed": "The 72-interval example no longer writes a provisional log (both signal settings); see provisional_export_eligibility_0.8.0. A provisional log to which warnings apply has one sentence added to its notes that points to those warnings."
+    },
+    "scope": "Inputs of R01 to R29 and of the clock-comparison scans are not distributed"
+  },
+  "provisional_export_eligibility_0.8.0": {
+    "tolerance_s": 0.2,
+    "r01_to_r28_default_settings_automatic_alignment": {
+      "not_blocked_evidence_complete": 26,
+      "not_blocked_evidence_incomplete": 2,
+      "missing_estimates": {
+        "R09": [
+          "trim"
+        ],
+        "R19": [
+          "closure"
+        ]
+      },
+      "withheld": 0,
+      "not_assessable": 0,
+      "assessed_for_the_adopted_retry": [
+        "R02",
+        "R03",
+        "R16"
+      ]
+    },
+    "r29_default_settings_automatic_alignment": {
+      "status": "insufficient_evidence",
+      "provisional_export_eligibility": "no_acquisition_rate"
+    },
+    "supported_results_with_a_status_other_than_not_blocked": "0 of 248 result sets",
+    "main_diagnostic_withheld_when_the_retry_is_not_used": {
+      "acquisitions": [
+        "R02"
+      ],
+      "settings": [
+        "every scan line, automatic starting alignment",
+        "the channel sum and every scan line, automatic starting alignment",
+        "the channel sum as matching signal, automatic starting alignment",
+        "the defaults, automatic starting alignment"
+      ],
+      "note": "Assessed for the main diagnostic alone, which is what an export uses when the input-placement retry is switched off"
+    },
+    "short_record_examples": {
+      "69-line example": {
+        "status": "insufficient_evidence",
+        "provisional_export_eligibility": "no_acquisition_rate",
+        "evidence_completeness": null,
+        "triggered_conditions": [],
+        "provisional_log_written": false,
+        "provisional_log_written_by_0_7_0": false,
+        "runs": 2
+      },
+      "72-interval example": {
+        "status": "short_acquisition_conditional",
+        "provisional_export_eligibility": "withheld",
+        "evidence_completeness": "incomplete",
+        "triggered_conditions": [
+          "rate_direction"
+        ],
+        "provisional_log_written": false,
+        "provisional_log_written_by_0_7_0": true,
+        "runs": 2
+      },
+      "96-spot example": {
+        "status": "short_acquisition_conditional",
+        "provisional_export_eligibility": "not_blocked",
+        "evidence_completeness": "incomplete",
+        "triggered_conditions": [],
+        "provisional_log_written": true,
+        "provisional_log_written_by_0_7_0": true,
+        "runs": 2
+      }
+    },
+    "scope": "Retrospective outcomes on the study acquisitions and the public short-record examples; not a prospective rate"
+  },
+  "tolerance_as_distance_0.8.0": {
+    "runs": {
+      "R29, declared starting alignment": {
+        "csv_files_identical_to_the_run_in_seconds": 1,
+        "scan_speed_um_s": 375.0,
+        "resolved_tolerance_s": 0.2
+      },
+      "R05, original-file export": {
+        "csv_files_identical_to_the_run_in_seconds": 3,
+        "scan_speed_um_s": 375.0,
+        "resolved_tolerance_s": 0.2
+      }
+    },
+    "distance_refused_for_new_wave_logs": 2,
+    "scope": "A distance of 75 µm at 375 µm s⁻¹ against 0.2 s, on R29 and on the original-file export of R05"
+  },
+  "numerical_reproducibility": "Correlation peaks in the record of the matching-signal selection can differ after the 13th significant digit between runs that use different numbers of threads in the linear-algebra library; the diagnoses were unaffected. Compare results with the tolerances stated in the example READMEs.",
+  "validation_performed_with_earlier_releases": {
+    "note": "The entries below were obtained with the release named by each key. They were not repeated with 0.8.0, except where comparison_with_0.7.0 states a comparison.",
+    "0.7.0": {
+      "skip_record_edge_lines": true,
+      "ms_signal_selection_csv": "highest_alignment_peak",
+      "scope": "Both defaults were chosen after the outcomes of R01 to R28 had been examined; the counts below are retrospective, not a prospective success rate",
+      "r01_to_r28_supported_automatic_alignment_archived_inputs": {
+        "v070_defaults": 18,
+        "v060_defaults": 0
+      },
+      "r01_to_r28_supported_saved_alignment_declared_archived_inputs": {
+        "v070_defaults": 19
+      },
+      "tolerance_s": 0.2,
+      "both_defaults_off_runs_equal_to_v060_defaults": {
+        "runs": 81,
+        "composition": "56 runs for R01 to R28 under two starting alignments, 6 for the corrected inputs of R05, R07 and R14, 3 settings for R29 and 16 settings for the clock-comparison scans",
+        "differences": 0
+      },
+      "r05_original_file_export_rates": "identical to 0.6.0",
+      "iolite_examples": "identical to 0.6.0",
+      "r01_example": "examples/R01 uses the default analysis; the Figure 3 audit and the re-estimation match the stored mapping"
+    },
+    "0.6.0": {
+      "study_repeat": {
+        "default_settings_runs_compared_with_0.5.0": 56,
+        "runs_differing_in_rate_retained_blocks_or_earlier_checks": 0,
+        "acquisitions_whose_status_changed_through_the_laser_log_screen": [
+          "R05"
+        ],
+        "scope": "R01 to R28 from saved workspaces under automatic and declared starting alignment; inputs are not distributed"
+      }
+    }
   },
   "privacy_scope": "Only anonymous R01 C13 and Fe56 values and events; no other biological raw data, original workspace, sample identity, private paths or AI prompts",
-  "interpretation": "Internal numerical reproduction and software checks, not independent spatial validation or journal acceptance.",
-  "defaults_0.7.0": {
-    "skip_record_edge_lines": true,
-    "ms_signal_selection_csv": "highest_alignment_peak",
-    "scope": "Both defaults were chosen after the outcomes of R01 to R28 had been examined; the counts below are retrospective, not a prospective success rate",
-    "r01_to_r28_supported_automatic_alignment_archived_inputs": {
-      "v070_defaults": 18,
-      "v060_defaults": 0
-    },
-    "r01_to_r28_supported_saved_alignment_declared_archived_inputs": {
-      "v070_defaults": 19
-    },
-    "tolerance_s": 0.2,
-    "both_defaults_off_runs_equal_to_v060_defaults": {
-      "runs": 81,
-      "composition": "56 runs for R01 to R28 under two starting alignments, 6 for the corrected inputs of R05, R07 and R14, 3 settings for R29 and 16 settings for the clock-comparison scans",
-      "differences": 0
-    },
-    "r05_original_file_export_rates": "identical to 0.6.0",
-    "iolite_examples": "identical to 0.6.0",
-    "r01_example": "examples/R01 uses the default analysis; the Figure 3 audit and the re-estimation match the stored mapping"
-  }
+  "interpretation": "Internal numerical reproduction and software checks, not independent spatial validation or journal acceptance."
 }

@@ -35,7 +35,7 @@
   "runs": {
     "automatic": {
       "report_subset": {
-        "version": "0.7.0",
+        "version": "0.8.0",
         "tool": "la-lagcheck",
         "status": "supported",
         "rate_ppm": 173.11258783602628,
@@ -92,7 +92,7 @@
     },
     "declared": {
       "report_subset": {
-        "version": "0.7.0",
+        "version": "0.8.0",
         "tool": "la-lagcheck",
         "status": "supported",
         "rate_ppm": 173.05804299808756,
@@ -204,7 +204,7 @@
         "failed_checks": []
       },
       "manifest_subset": {
-        "version": "0.7.0",
+        "version": "0.8.0",
         "mode": "rate_only",
         "input_sha256": {
           "ms": "26967f4123dcb05a5e0a6f0250a24d62555416e9833b40aef0b35c8980e024b9",

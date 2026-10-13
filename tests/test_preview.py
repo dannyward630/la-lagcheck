@@ -34,7 +34,7 @@ def read_json(path):
 @unittest.skipUnless(HAVE_MATPLOTLIB, 'matplotlib (optional extra "preview") is not installed')
 class PreviewTests(unittest.TestCase):
     def setUp(self):
-        self.temp = tempfile.TemporaryDirectory(dir=Path(__file__).parent)
+        self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
 

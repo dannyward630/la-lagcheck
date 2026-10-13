@@ -15,7 +15,7 @@ from lagcheck.ms import load_signal
 
 class SignalImportTests(unittest.TestCase):
     def setUp(self):
-        self.directory = tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parent)
+        self.directory = tempfile.TemporaryDirectory()
         self.addCleanup(self.directory.cleanup)
         self.path = Path(self.directory.name) / "signal.csv"
 
@@ -200,7 +200,7 @@ class QtegraLDRTests(unittest.TestCase):
     fixture = Path(__file__).resolve().parent / "fixtures" / "thermo_qtegra_ldr_5points.csv"
 
     def setUp(self):
-        self.directory = tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parent)
+        self.directory = tempfile.TemporaryDirectory()
         self.addCleanup(self.directory.cleanup)
         self.path = Path(self.directory.name) / "modified_ldr.csv"
         self.content = self.fixture.read_text(encoding="utf-8")

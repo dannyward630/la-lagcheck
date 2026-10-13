@@ -49,7 +49,7 @@ class WorkflowTests(unittest.TestCase):
         return config
 
     def test_end_to_end_export_and_remeasurement(self):
-        with tempfile.TemporaryDirectory(dir=Path(__file__).parent) as folder:
+        with tempfile.TemporaryDirectory() as folder:
             root=Path(folder);config=self.make_case(root)
             before={n:digest(root/n) for n in ('signal.csv','laser.csv')}
             code,r=run(root/'config.json',root/'out',True)
@@ -71,7 +71,7 @@ class WorkflowTests(unittest.TestCase):
             self.assertEqual(main(['run',str(root/'config.json'),'--output',str(root/'out'),'--export']),1)
 
     def test_qc_failure_does_not_export(self):
-        with tempfile.TemporaryDirectory(dir=Path(__file__).parent) as folder:
+        with tempfile.TemporaryDirectory() as folder:
             root=Path(folder);self.make_case(root,step=2.)
             code,r=run(root/'config.json',root/'out',True)
             self.assertEqual(code,2)
@@ -81,7 +81,7 @@ class WorkflowTests(unittest.TestCase):
 
     def test_explicit_netcdf_mapping_and_cli_inspection(self):
         from scipy.io import netcdf_file
-        with tempfile.TemporaryDirectory(dir=Path(__file__).parent) as folder:
+        with tempfile.TemporaryDirectory() as folder:
             root=Path(folder);cfg=self.make_case(root)
             values=np.loadtxt(root/'signal.csv',delimiter=',',skiprows=1)
             with netcdf_file(root/'signal.nc','w') as nc:
@@ -105,7 +105,7 @@ class WorkflowTests(unittest.TestCase):
             self.assertEqual(digest(root/'signal.nc'),before)
 
     def test_invalid_file_is_tool_input_error(self):
-        with tempfile.TemporaryDirectory(dir=Path(__file__).parent) as folder:
+        with tempfile.TemporaryDirectory() as folder:
             root=Path(folder)
             (root/'config.json').write_text('{"ms": {}, "laser": {}, "analysis": {}}')
             self.assertEqual(main(['run',str(root/'config.json'),'--output',str(root/'out')]),1)

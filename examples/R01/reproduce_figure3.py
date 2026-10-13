@@ -13,6 +13,7 @@ import pandas as pd
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+from matplotlib import font_manager
 from matplotlib.patches import Rectangle
 from matplotlib.lines import Line2D
 import matplotlib.patheffects as pe
@@ -35,7 +36,13 @@ data = HERE.parents[1] / 'study_summaries/Supplementary_Data_S1.csv'
 M = pd.read_csv(data)
 assert len(M)==29 and set(M.acquisition)=={f'R{i:02d}' for i in range(1,30)}
 assert np.allclose(M.first_to_last_displacement_mm,np.abs(M.rate_ppm)*1e-6*M.duration_h*3600*M.speed_um_s/1000)
-plt.rcParams.update({'font.family':'Arial','font.size':8,'axes.titlesize':8,'axes.labelsize':7.7,
+FONT = 'Arial'
+try:
+    font_manager.findfont(FONT, fallback_to_default=False)
+except ValueError:
+    FONT = 'DejaVu Sans'  # distributed with matplotlib
+    print('Arial is not installed: the figure is drawn with DejaVu Sans. Its numbers are unchanged; its lettering differs from the published figure.')
+plt.rcParams.update({'font.family':FONT,'font.size':8,'axes.titlesize':8,'axes.labelsize':7.7,
                      'xtick.labelsize':7.5,'ytick.labelsize':7.5,'pdf.fonttype':42,'svg.fonttype':'none',
                      'axes.spines.top':False,'axes.spines.right':False,'axes.linewidth':.6})
 cm=plt.get_cmap('viridis').copy();cm.set_bad('#cccccc')

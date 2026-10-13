@@ -27,6 +27,27 @@ def _pyplot():
         raise InputError('Default previews require matplotlib>=3.8; install the package requirements') from exc
 
 
+def _display_lines(fit_report, rate, source, starts, ends, display_offset):
+    """Firing times under a rate that no written log applies.
+
+    The fitted constant is taken from the diagnostic only for a rate estimated
+    from the acquisition. A reference rate is rate-only and takes none.
+    """
+    scale = 1.+rate*1e-6
+    if not math.isfinite(scale) or scale <= 0:
+        raise InputError('Preview rate must have a finite positive time scale')
+    constant = display_offset
+    closure = fit_report.get('closure') or {}
+    fit = closure.get('residual_fit')
+    if source != 'user_reference_rate' and closure.get('converged') and fit:
+        mids = [b['t_mid'] for b in closure['blocks'] if b['block'] in fit['retained']]
+        constant += fit['intercept_s'] + fit['rate_ppm']*1e-6*(float(np.median(mids))-fit['intercept_time_s'])
+    elif source in ('acquisition_estimate','input_position_fallback') and fit_report.get('baseline'):
+        fit = fit_report['baseline']
+        constant += fit['intercept_s'] + rate*1e-6*(starts[0]+display_offset-fit['intercept_time_s'])
+    return starts[0]+scale*(starts-starts[0])+constant, starts[0]+scale*(ends-starts[0])+constant
+
+
 def _map_lines(config, report, laser, ms):
     starts = np.array([v['Start Time'] for v in laser.lines])
     ends = np.array([v['End Time'] for v in laser.lines])
@@ -40,6 +61,8 @@ def _map_lines(config, report, laser, ms):
         offset = _finite(config['analysis'].get('alignment_offset_s'))
         alignment_source = 'explicit_user_offset' if offset is not None else 'unregistered; zero display shift is not a known clock origin'
     display_offset = offset if offset is not None else 0.
+    eligibility = report.get('provisional_export_eligibility')
+    record = eligibility.get('applied_mapping') if isinstance(eligibility, dict) else None
     file = report.get('usable_file') or report.get('provisional_file')
     if file:
         provisional = not bool(report.get('usable_file'))
@@ -62,9 +85,21 @@ def _map_lines(config, report, laser, ms):
         mapped_ends = np.array([v['End Time']+shift for v in written.lines])
         rate = float(receipt['rate_ppm'])
         source = 'published_provisional_log' if provisional else 'published_verified_log'
-        provenance = dict(path=str(file), sha256=receipt['output_sha256'], mode=plan['mode'],
-                          estimate_source='input_position_fallback' if fallback.get('adopted') else report.get('provisional_rate_source','acquisition_estimate'))
+        # The source of the rate that this file applies. A verified log is written from the acquisition estimate; a
+        # provisional log records its own source, which is the reference rate when the estimate or the adopted retry
+        # was withheld. Only a report without that record falls back on the diagnostic that was selected.
+        estimate_source = 'acquisition_estimate'
+        if provisional:
+            estimate_source = report.get('provisional_rate_source') or ('input_position_fallback' if fallback.get('adopted') else 'acquisition_estimate')
+        provenance = dict(path=str(file), sha256=receipt['output_sha256'], mode=plan['mode'], estimate_source=estimate_source)
+    elif record is not None:
+        # The run recorded which mapping is in use. A rate withheld from the provisional log is not displayed as applied.
+        rate, source = _finite(record.get('rate_ppm')), record.get('rate_source')
+        if rate is None:
+            source = None
+        provenance = None
     else:
+        # A report written before that record existed: the estimate, otherwise the supplied reference rate.
         rate = _finite(fit_report.get('rate_ppm'))
         source = ('input_position_fallback' if fallback.get('adopted') else 'acquisition_estimate') if rate is not None else None
         if rate is None:
@@ -72,28 +107,25 @@ def _map_lines(config, report, laser, ms):
             if rate is not None:
                 source = 'user_reference_rate'
         provenance = None
+    if not file:
         if rate is None:
             mapped_starts, mapped_ends = starts+display_offset, ends+display_offset
         else:
-            scale = 1.+rate*1e-6
-            if not math.isfinite(scale) or scale <= 0:
-                raise InputError('Preview rate must have a finite positive time scale')
-            constant = display_offset
-            closure = fit_report.get('closure') or {}
-            fit = closure.get('residual_fit')
-            if closure.get('converged') and fit:
-                mids = [b['t_mid'] for b in closure['blocks'] if b['block'] in fit['retained']]
-                constant += fit['intercept_s'] + fit['rate_ppm']*1e-6*(float(np.median(mids))-fit['intercept_time_s'])
-            elif source in ('acquisition_estimate','input_position_fallback') and fit_report.get('baseline'):
-                fit = fit_report['baseline']
-                constant += fit['intercept_s'] + rate*1e-6*(starts[0]+display_offset-fit['intercept_time_s'])
-            mapped_starts = starts[0]+scale*(starts-starts[0])+constant
-            mapped_ends = starts[0]+scale*(ends-starts[0])+constant
+            mapped_starts, mapped_ends = _display_lines(fit_report, rate, source, starts, ends, display_offset)
+    rejected = None
+    candidate = (record or {}).get('rejected_candidate') or {}
+    if _finite(candidate.get('rate_ppm')) is not None:
+        try:
+            shown = _display_lines(fit_report, _finite(candidate['rate_ppm']), candidate.get('rate_source'), starts, ends, display_offset)
+            rejected = dict(rate=_finite(candidate['rate_ppm']), source=str(candidate.get('rate_source')), starts=shown[0], ends=shown[1])
+        except InputError:
+            pass        # a candidate without a positive time scale cannot be drawn
     lag = mapped_starts-starts
     return dict(rate=rate, source=source, provenance=provenance, alignment_offset_s=offset,
                 alignment_source=alignment_source, starts=mapped_starts, ends=mapped_ends,
                 lags=lag, constant=float(np.median(lag)) if rate is not None else display_offset,
-                constant_source='median start-time shift of displayed mapping' if rate is not None else alignment_source)
+                constant_source='median start-time shift of displayed mapping' if rate is not None else alignment_source,
+                rejected=rejected)
 
 
 def _grid(geometry):
@@ -243,7 +275,70 @@ def render_raw_diagnostic(run_dir, config, hashes, reason, name='preview_pair', 
     return summary
 
 
-def render_preview_pair(run_dir, channel=None, name='preview_pair'):
+def _export_text(report):
+    """Footer lines on the tolerance, the provisional export eligibility and missing estimates.
+
+    A supported result whose tolerance was given in seconds gets none, so its figure is as before.
+    """
+    record, resolution = report.get('provisional_export_eligibility'), report.get('tolerance_resolution') or {}
+    converted = resolution.get('requested_unit') == 'um'
+    if not isinstance(record, dict) or (report.get('status') == 'supported' and not converted):
+        return []
+    lines = []
+    try:
+        tolerance = f"Tolerance {resolution['resolved_tolerance_s']:g} s"
+        if converted:
+            tolerance += (f", converted before the diagnosis from {resolution['requested_value']:g} µm at "
+                          f"{resolution['speed_um_s']:g} µm s⁻¹")
+        else:
+            row = next((q for q in (report.get('distance_scale') or {}).get('quantities') or [] if q.get('quantity') == 'tolerance'), {})
+            if row.get('um_max') is not None:
+                tolerance += (f" ({row['um_max']:g} µm along the scan)" if row['um_min'] == row['um_max'] else
+                              f" ({row['um_min']:g} to {row['um_max']:g} µm along the scan)")
+        if report.get('status') == 'supported':
+            return [tolerance + '.']
+        lines.append(f"Provisional export eligibility: {record['status']}"
+                     + (f", evidence {record['evidence_completeness']}" if record.get('evidence_completeness') else '') + f'. {tolerance}.')
+        if record['status'] != 'no_acquisition_rate':
+            lines.append(record.get('message') or record['explanation'])
+        lines.extend(record.get('warnings') or [])
+    except (KeyError, TypeError, ValueError):
+        pass
+    return lines
+
+
+def _readback_of_display(report):
+    """The read-back that belongs to the log a preview displays, and the read-back of the candidate log apart.
+
+    The verified path writes a candidate from the acquisition estimate and reads it back
+    (``post_export_verification``). A provisional log that keeps the checked bytes of that
+    candidate has the same record. A provisional log that was written as its own file has its
+    own record (``provisional_readback``): after a failed input diagnostic, or from a reference
+    rate after the read-back of the candidate failed. In that last case the two records describe
+    different files, and the failed read-back of the candidate is not a result for the displayed log.
+    """
+    post, own = report.get('post_export_verification'), report.get('provisional_readback')
+    # Which exit wrote the provisional log is read from the report. Only the exit that publishes the checked candidate
+    # after its read-back failed records this stage with the acquisition estimate as the source of the rate. The bytes of
+    # the two files are not compared: a rate-only log can have the bytes of an affine candidate and still have another
+    # fixed mapping, with another read-back.
+    keeps_candidate = (bool(post) and report.get('provisional_failure_stage') == 'readback'
+                       and report.get('provisional_rate_source') == 'acquisition_estimate')
+    own_file = bool(report.get('provisional_file')) and not report.get('usable_file') and isinstance(own, dict) and not keeps_candidate
+    if own_file:
+        status, failed, record = own.get('status') or 'not_requested', own.get('failed_checks', []), 'provisional_readback'
+    elif post:
+        status, failed, record = ('passed' if post['passed'] else 'failed'), post.get('failed_checks', []), 'post_export_verification'
+    else:
+        status, failed = (own or {}).get('status') or 'not_requested', (own or {}).get('failed_checks', [])
+        record = 'provisional_readback' if own else None
+    return dict(readback_status=status, readback_failed_checks=failed, readback_record=record,
+                candidate_readback_status=None if not post else ('passed' if post['passed'] else 'failed'),
+                candidate_readback_failed_checks=list(post.get('failed_checks', [])) if post else [],
+                candidate_is_another_file=bool(post) and own_file)
+
+
+def render_preview_pair(run_dir, channel=None, name='preview_pair', sample_label=True):
     out = Path(run_dir).resolve()
     if not isinstance(name, str) or not name or Path(name).name != name or name.startswith('.'):
         raise InputError('name must be a plain file stem without directories')
@@ -282,15 +377,30 @@ def render_preview_pair(run_dir, channel=None, name='preview_pair'):
     panel_lines = [(base_title, base)]
     if mapping['rate'] is not None:
         panel_lines.append(('correction: '+mapping['source'], mapped))
+    rejected = mapping['rejected']
+    if rejected:
+        # Drawn for inspection only and named as such; it is not the applied mapping of this run.
+        panel_lines.append((f"rejected candidate for inspection: {rejected['source']}, not applied",
+                            [dict(r, **{'Start Time':float(rejected['starts'][i]), 'End Time':float(rejected['ends'][i])})
+                             for i,r in enumerate(lines)]))
     images = [(title, rasterize_true_y(np.asarray(ms.time), np.asarray(ms.signal), rows, np.zeros(len(rows)),
                                       x0, nx, geometry['pitch'], y0, ny, geometry['row_pitch'])) for title,rows in panel_lines]
     warnings = []
     if report['status'] != 'supported':
         warnings.append('NOT VERIFIED: '+str(report.get('reason') or report['status']))
+    readback = _readback_of_display(report)
     failed = [k for k,v in report.get('checks', {}).items() if not v]
-    failed += (report.get('post_export_verification') or {}).get('failed_checks', [])
+    if not readback['candidate_is_another_file']:
+        failed += (report.get('post_export_verification') or {}).get('failed_checks', [])
     if failed:
         warnings.append('Failed checks: '+', '.join(dict.fromkeys(failed)))
+    if readback['candidate_is_another_file']:
+        # The read-back that failed is that of the candidate log. The displayed log is another file with its own read-back.
+        warnings.append('Failed read-back checks of the candidate log (written from the acquisition estimate; not the log displayed here): '
+                        + (', '.join(readback['candidate_readback_failed_checks']) or 'none'))
+        own_failed = ', '.join(readback['readback_failed_checks'])
+        warnings.append(f"Read-back of the displayed provisional log ({report.get('provisional_rate_source')}), with its mapping held fixed: "
+                        f"{readback['readback_status']}" + (f' ({own_failed})' if own_failed else '') + '. This log stays provisional.')
     fallback = report.get('alignment_fallback') or {}
     if fallback.get('attempted'):
         warnings.append(fallback['note'])
@@ -304,7 +414,10 @@ def render_preview_pair(run_dir, channel=None, name='preview_pair'):
         warnings.append('No verified firing speed: inherited positioning speeds are not used for spatial displacement estimates.')
     if geometry.get('note'):
         warnings.append(geometry['note'])
-    if mapping['rate'] is None:
+    if mapping['rate'] is None and rejected:
+        warnings.append('No rate correction is applied in this view. The rate estimated from this acquisition is drawn only as a '
+                        'rejected candidate for inspection.')
+    elif mapping['rate'] is None:
         warnings.append('No rate estimate or user reference rate: unverified automatic alignment only; no rate correction.' if unverified_peak else 'No rate estimate or user reference rate: only original/declared alignment shown.')
     if mapping['alignment_offset_s'] is None and (mapping['provenance'] or {}).get('mode') != 'affine':
         warnings.append('Clock origins are not aligned; zero is a display shift, not a verified origin.')
@@ -314,19 +427,26 @@ def render_preview_pair(run_dir, channel=None, name='preview_pair'):
         warnings.append('No verified corrected file is established by this view.')
     if geometry['downsample_factor'] > 1:
         warnings.append(f"Grid pitch enlarged {geometry['downsample_factor']} times; not full-resolution output.")
-    post=report.get('post_export_verification')
-    provisional_readback=report.get('provisional_readback')
-    readback_status=('passed' if post['passed'] else 'failed') if post else ((provisional_readback or {}).get('status') or 'not_requested')
+    # The read-back status is that of the displayed log. The read-back of the candidate log is recorded apart.
+    readback_status=readback['readback_status']
     export_status='verified' if report.get('correction_exported') else ('provisional_not_verified' if report.get('provisional_file') else 'not_published')
     stages=dict(input_diagnostic_status=report.get('input_diagnostic_status',report['status']),
                 input_failed_checks=[k for k,v in report.get('checks',{}).items() if not v],
-                readback_status=readback_status,readback_failed_checks=(post or provisional_readback or {}).get('failed_checks',[]),
-                export_verification_status=export_status)
-    headline = f"{laser.metadata.get('sample') or Path(config['laser']['path']).stem}; {channel}\nInput: {stages['input_diagnostic_status']}; read-back: {readback_status}; export: {export_status}"
+                readback_status=readback_status,readback_failed_checks=readback['readback_failed_checks'],
+                export_verification_status=export_status,readback_record=readback['readback_record'],
+                candidate_readback_status=readback['candidate_readback_status'],
+                candidate_readback_failed_checks=readback['candidate_readback_failed_checks'])
+    # sample_label=False leaves the sample label (or, without one, the laser file name) out of the title.
+    subject = f"{laser.metadata.get('sample') or Path(config['laser']['path']).stem}; {channel}" if sample_label else str(channel)
+    readback_text = f'read-back of the displayed log: {readback_status}' if readback['candidate_is_another_file'] else f'read-back: {readback_status}'
+    headline = f"{subject}\nInput: {stages['input_diagnostic_status']}; {readback_text}; export: {export_status}"
+    if readback['candidate_is_another_file']:
+        headline += f"\nRead-back of the candidate log (not the log displayed here): {readback['candidate_readback_status']}"
+    export_text = _export_text(report)
     valid = [img[np.isfinite(img)] for _,img in images]
     if not any(v.size for v in valid):
         warnings.append('No MS samples fall within displayed firing intervals. Raw signal shown instead.')
-        scale = _signal_view(png, ms, channel, headline, warnings)
+        scale = _signal_view(png, ms, channel, headline, warnings+export_text)
         view = 'signal_time'
     else:
         view = 'stage_raster' if geometry['source'].startswith('laser log') else 'line_time'
@@ -335,7 +455,7 @@ def render_preview_pair(run_dir, channel=None, name='preview_pair'):
         lo, hi = map(float, np.percentile(values, [2,98]))
         if hi-lo < .1:
             lo,hi = (hi+lo)/2-.05,(hi+lo)/2+.05
-        footer='\n'.join(textwrap.fill(w,145) for w in warnings)
+        footer='\n'.join(textwrap.fill(w,145) for w in warnings+export_text)
         header='\n'.join(textwrap.fill(line,115) for line in (headline+'\n'+str(mapping['alignment_source'])).splitlines())
         fig, axes = plt.subplots(1,len(images),figsize=(6*len(images),6+.16*(footer.count('\n')+header.count('\n'))),squeeze=False,layout='constrained')
         cmap=plt.get_cmap('viridis').copy(); cmap.set_bad('.85')
@@ -385,8 +505,19 @@ def render_preview_pair(run_dir, channel=None, name='preview_pair'):
                  mapped_interval_starts_s=mapping['starts'].tolist(),mapped_interval_ends_s=mapping['ends'].tolist(),
                  input_processing=laser.metadata.get('input_processing'),input_sha256=report['input_sha256'],input_unchanged=True,
                  note='Visual inspection only; no independent spatial accuracy or receiving-importer validation.')
+    eligibility = report.get('provisional_export_eligibility')
+    if isinstance(eligibility, dict):
+        # The same record that decided whether a provisional log was written; the figure shows no other mapping as applied.
+        summary.update(provisional_export_eligibility=dict(status=eligibility.get('status'),
+                                                           evidence_completeness=eligibility.get('evidence_completeness'),
+                                                           applied_mapping=eligibility.get('applied_mapping')),
+                       rejected_candidate=None if not rejected else dict(rate_ppm=rejected['rate'], rate_source=rejected['source'],
+                                                                         panel=panel_lines[-1][0]),
+                       provisional_export_text=export_text)
     if new_wave_views is not None:
         summary['new_wave_views'] = new_wave_views
+    if not sample_label:
+        summary['sample_label_in_title'] = False
     summary.update(stages)
     summary.update(original_input_check=report.get('original_input_check'),
                    processed_input_diagnostic_status=report.get('processed_input_diagnostic_status'))
