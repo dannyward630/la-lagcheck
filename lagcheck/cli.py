@@ -1427,4 +1427,8 @@ def _configure_utf8_stdio() -> None:
     for stream in (sys.stdout, sys.stderr):
         reconfigure = getattr(stream, 'reconfigure', None)
         if callable(reconfigure):
-            reconfigure(encoding='utf-8')
+            errors = getattr(stream, 'errors', None)
+            if errors is None:
+                reconfigure(encoding='utf-8')
+            else:
+                reconfigure(encoding='utf-8', errors=errors)

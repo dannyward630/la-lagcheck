@@ -9,6 +9,8 @@ import sys
 
 import pytest
 
+from lagcheck import cli
+
 
 @pytest.mark.parametrize(
     ("args", "stream_name", "expected_text", "expected_code"),
@@ -39,3 +41,42 @@ def test_cli_reconfigures_standard_streams_to_utf8(
     output = getattr(result, stream_name).decode("utf-8")
     assert result.returncode == expected_code, output
     assert expected_text in output
+
+
+def test_cli_preserves_standard_stream_error_handlers(monkeypatch: pytest.MonkeyPatch) -> None:
+    class Stream:
+        def __init__(self, errors: str) -> None:
+            self.errors = errors
+            self.options: dict[str, str] | None = None
+
+        def reconfigure(self, **options: str) -> None:
+            self.options = options
+
+    stdout = Stream("surrogateescape")
+    stderr = Stream("backslashreplace")
+    monkeypatch.setattr(cli.sys, "stdout", stdout)
+    monkeypatch.setattr(cli.sys, "stderr", stderr)
+
+    cli._configure_utf8_stdio()
+
+    assert stdout.options == {"encoding": "utf-8", "errors": "surrogateescape"}
+    assert stderr.options == {"encoding": "utf-8", "errors": "backslashreplace"}
+
+
+@pytest.mark.skipif(os.name == "nt", reason="POSIX argv can contain undecodable bytes")
+def test_cli_unrecognized_surrogate_argument_keeps_argparse_error_exit() -> None:
+    env = os.environ.copy()
+    env["PYTHONIOENCODING"] = "ascii:backslashreplace"
+    env["PYTHONUTF8"] = "0"
+
+    result = subprocess.run(
+        [sys.executable, "-X", "utf8=0", "-B", "-m", "lagcheck", "\udcff"],
+        cwd=Path(__file__).resolve().parents[1],
+        env=env,
+        capture_output=True,
+    )
+
+    output = result.stderr.decode("utf-8")
+    assert result.returncode == 2, output
+    assert "unrecognized arguments" in output
+    assert r"\udcff" in output

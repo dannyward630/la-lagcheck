@@ -1,6 +1,6 @@
 # Unreleased
 
-- Reconfigure command-line stdout and stderr as UTF-8 so summary and error text can be printed under Windows code pages that cannot encode it.
+- Reconfigure command-line stdout and stderr as UTF-8 while preserving their error handlers, so Unicode output remains printable without breaking argparse errors for undecodable POSIX arguments.
 
 # LA-LagCheck 0.8.0
 
