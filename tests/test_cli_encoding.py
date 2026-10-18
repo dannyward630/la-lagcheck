@@ -64,13 +64,25 @@ def test_cli_preserves_standard_stream_error_handlers(monkeypatch: pytest.Monkey
 
 
 @pytest.mark.skipif(os.name == "nt", reason="POSIX argv can contain undecodable bytes")
-def test_cli_unrecognized_surrogate_argument_keeps_argparse_error_exit() -> None:
+def test_cli_unrecognized_surrogate_after_subcommand_keeps_argparse_error_exit() -> None:
     env = os.environ.copy()
     env["PYTHONIOENCODING"] = "ascii:backslashreplace"
     env["PYTHONUTF8"] = "0"
 
     result = subprocess.run(
-        [sys.executable, "-X", "utf8=0", "-B", "-m", "lagcheck", "\udcff"],
+        [
+            sys.executable,
+            "-X",
+            "utf8=0",
+            "-B",
+            "-m",
+            "lagcheck",
+            "run",
+            "config.json",
+            "--output",
+            "output.csv",
+            "\udcff",
+        ],
         cwd=Path(__file__).resolve().parents[1],
         env=env,
         capture_output=True,
